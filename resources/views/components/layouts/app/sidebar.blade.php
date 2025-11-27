@@ -14,13 +14,22 @@
             <flux:navlist variant="outline">
                 <flux:navlist.group :heading="__('Platform')" class="grid">
                     <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
+                    <flux:navlist.item icon="calendar" :href="route('schedule.index')" :current="request()->routeIs('schedule.*')" wire:navigate>{{ __('Emploi du Temps') }}</flux:navlist.item>
                 </flux:navlist.group>
+
+                @if(auth()->user()->isAdmin())
+                    <flux:navlist.group :heading="__('Administration')" class="grid">
+                        <flux:navlist.item icon="users" :href="route('admin.users')" :current="request()->routeIs('admin.users')" wire:navigate>{{ __('Utilisateurs') }}</flux:navlist.item>
+                        <flux:navlist.item icon="document-arrow-up" :href="route('admin.import-ics')" :current="request()->routeIs('admin.import-ics')" wire:navigate>{{ __('Import ICS') }}</flux:navlist.item>
+                        <flux:navlist.item icon="document-text" :href="route('admin.import-pdf')" :current="request()->routeIs('admin.import-pdf')" wire:navigate>{{ __('Import PDF') }}</flux:navlist.item>
+                    </flux:navlist.group>
+                @endif
             </flux:navlist>
 
             <flux:spacer />
 
             <flux:navlist variant="outline">
-                <flux:navlist.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
+                <flux:navlist.item icon="folder-git-2" href="https://github.com/clesecq/cnampagnon" target="_blank">
                 {{ __('Repository') }}
                 </flux:navlist.item>
 

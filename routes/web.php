@@ -4,13 +4,16 @@ use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
 
-Route::get('/', function () {
-    return view('welcome');
-})->name('home');
+Volt::route('/', 'home')->name('home');
 
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
+
+// Route pour l'emploi du temps (accessible aux utilisateurs authentifiés)
+Volt::route('schedule', 'schedule.index')
+    ->middleware(['auth'])
+    ->name('schedule.index');
 
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');
@@ -29,4 +32,13 @@ Route::middleware(['auth'])->group(function () {
             ),
         )
         ->name('two-factor.show');
+});
+
+// Routes administrateur (protégées par middleware admin)
+Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
+    Route::redirect('/', 'admin/users');
+
+    Volt::route('users', 'admin.users')->name('admin.users');
+    Volt::route('import-ics', 'admin.import-ics')->name('admin.import-ics');
+    Volt::route('import-pdf', 'admin.import-pdf')->name('admin.import-pdf');
 });
