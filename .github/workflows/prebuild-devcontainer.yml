@@ -1,0 +1,47 @@
+name: Prebuild Dev Container
+
+on:
+  workflow_dispatch: # Allows manual trigger
+  push:
+    branches:
+      - main
+    paths:
+      - '.devcontainer/**'
+      - 'docker/**'      # Trigger if you change the Dockerfile
+      - 'docker-compose.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # Required to push to GHCR
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prebuild Dev Container
+        uses: devcontainers/ci@v0.3
+        with:
+          # Point to your devcontainer folder
+          subFolder: .
+
+          # The name of the image to push (matches the one in docker-compose.yml)
+          imageName: ghcr.io/${{ github.repository }}/sail
+
+          # Cache usually speeds up re-builds
+          cacheFrom: ghcr.io/${{ github.repository }}/sail
+
+          # Always push the result to the registry
+          push: always
+
+          # Important: Since Sail uses docker-compose, we don't just build a Dockerfile.
+          # The action automatically detects devcontainer.json -> docker-compose.yml
