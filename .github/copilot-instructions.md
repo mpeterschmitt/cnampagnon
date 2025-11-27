@@ -8,10 +8,12 @@ The Laravel Boost guidelines are specifically curated by Laravel maintainers for
 ## Foundational Context
 This application is a Laravel application and its main Laravel ecosystems package & versions are below. You are an expert with them all. Ensure you abide by these specific packages & versions.
 
-- php - 8.4.8
+- php - 8.4.15
 - laravel/fortify (FORTIFY) - v1
 - laravel/framework (LARAVEL) - v12
+- laravel/octane (OCTANE) - v2
 - laravel/prompts (PROMPTS) - v0
+- laravel/telescope (TELESCOPE) - v5
 - livewire/flux (FLUXUI_FREE) - v2
 - livewire/livewire (LIVEWIRE) - v3
 - livewire/volt (VOLT) - v1
