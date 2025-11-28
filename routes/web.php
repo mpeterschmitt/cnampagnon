@@ -16,6 +16,23 @@ Volt::route('schedule', 'schedule.index')
     ->middleware(['auth'])
     ->name('schedule.index');
 
+// Routes pour les devoirs (accessible aux utilisateurs authentifiés)
+Volt::route('homeworks', 'homeworks.index')
+    ->middleware(['auth'])
+    ->name('homeworks.index');
+
+Volt::route('homeworks/create', 'homeworks.create')
+    ->middleware(['auth'])
+    ->name('homeworks.create');
+
+Volt::route('homeworks/{homework}/edit', 'homeworks.create')
+    ->middleware(['auth'])
+    ->name('homeworks.edit');
+
+// Route pour l'export ICS
+Route::get('schedule/export/ics', [ExportController::class, 'exportIcs'])
+    ->name('schedule.export.ics');
+
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');
 

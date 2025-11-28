@@ -15,6 +15,7 @@
                 <flux:navlist.group :heading="__('Platform')" class="grid">
                     <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
                     <flux:navlist.item icon="calendar" :href="route('schedule.index')" :current="request()->routeIs('schedule.*')" wire:navigate>{{ __('Emploi du Temps') }}</flux:navlist.item>
+                    <flux:navlist.item icon="document-text" :href="route('homeworks.index')" :current="request()->routeIs('homeworks.*')" wire:navigate>{{ __('Devoirs') }}</flux:navlist.item>
                 </flux:navlist.group>
 
                 @if(auth()->user()->isAdmin())

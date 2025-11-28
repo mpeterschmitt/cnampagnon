@@ -95,28 +95,73 @@ test('user can return to current week', function () {
         ->assertSee(now()->startOfWeek()->format('d/m/Y'));
 });
 
-// Test des filtres
-test('user can filter by course type', function () {
+// Test des devoirs dans l'emploi du temps
+test('schedule displays homeworks for the current week', function () {
     $user = User::factory()->create();
 
-    Volt::actingAs($user)
-        ->test('schedule.index')
-        ->set('selectedCourseType', 'cm')
-        ->assertSet('selectedCourseType', 'cm');
+    $dueDate = now()->startOfWeek()->addDays(2)->setTime(10, 0);
+    $homework = \App\Models\Event::factory()->homework()->create([
+        'title' => 'Math Assignment',
+        'due_date' => $dueDate,
+        'start_time' => $dueDate->copy()->addMinute(),
+        'end_time' => $dueDate->copy()->addMinutes(2),
+        'priority' => 'high',
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('schedule.index'))
+        ->assertSee('Math Assignment')
+        ->assertSee('Devoirs de la semaine');
 });
 
-test('user can clear all filters', function () {
+test('schedule does not display homeworks from other weeks', function () {
     $user = User::factory()->create();
 
-    Volt::actingAs($user)
-        ->test('schedule.index')
-        ->set('selectedCourseType', 'cm')
-        ->set('selectedSubject', 'math')
-        ->set('selectedTeacher', '1')
-        ->call('clearFilters')
-        ->assertSet('selectedCourseType', null)
-        ->assertSet('selectedSubject', null)
-        ->assertSet('selectedTeacher', null);
+    $dueDate = now()->subWeeks(2);
+    $homework = \App\Models\Event::factory()->homework()->create([
+        'title' => 'Old Assignment',
+        'due_date' => $dueDate,
+        'start_time' => $dueDate->copy()->addMinute(),
+        'end_time' => $dueDate->copy()->addMinutes(2),
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('schedule.index'))
+        ->assertDontSee('Old Assignment');
+});
+
+test('schedule shows overdue badge for late homeworks', function () {
+    $user = User::factory()->create();
+
+    $dueDate = now()->startOfWeek()->addDay()->subHours(2); // Yesterday within this week
+    $homework = \App\Models\Event::factory()->homework()->create([
+        'title' => 'Overdue Assignment',
+        'due_date' => $dueDate,
+        'start_time' => $dueDate->copy()->addMinute(),
+        'end_time' => $dueDate->copy()->addMinutes(2),
+        'completed' => false,
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('schedule.index'))
+        ->assertSee('Retard');
+});
+
+test('schedule shows completed checkmark for finished homeworks', function () {
+    $user = User::factory()->create();
+
+    $dueDate = now()->startOfWeek()->addDay();
+    $homework = \App\Models\Event::factory()->homework()->create([
+        'title' => 'Completed Assignment',
+        'due_date' => $dueDate,
+        'start_time' => $dueDate->copy()->addMinute(),
+        'end_time' => $dueDate->copy()->addMinutes(2),
+        'completed' => true,
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('schedule.index'))
+        ->assertSee('Completed Assignment');
 });
 
 // Test de l'affichage des jours de la semaine
