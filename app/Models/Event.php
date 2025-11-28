@@ -166,6 +166,14 @@ class Event extends Model
         return $query->betweenDates($startOfWeek, $endOfWeek);
     }
 
+    public function scopeForMonth($query, $date)
+    {
+        $startOfMonth = $date->copy()->startOfMonth();
+        $endOfMonth = $date->copy()->endOfMonth();
+
+        return $query->betweenDates($startOfMonth, $endOfMonth);
+    }
+
     /**
      * Scope : Événements à venir
      */
