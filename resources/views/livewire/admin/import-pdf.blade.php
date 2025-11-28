@@ -2,6 +2,7 @@
 
 use App\Models\Event;
 use App\Services\PdfImportService;
+use Carbon\Carbon;
 use Livewire\WithFileUploads;
 
 use function Livewire\Volt\layout;
@@ -22,9 +23,10 @@ state([
     'file' => null,              // Fichier PDF uploadé
     'processing' => false,       // État de traitement en cours
     'extractedData' => null,     // Données extraites du PDF
-    'ocrQuality' => 'high',      // Qualité de l'OCR (low, medium, high)
     'importedCount' => 0,        // Nombre d'événements importés
     'errorMessage' => null,      // Message d'erreur éventuel
+    'replaceExisting' => false,  // Remplacer l'emploi du temps existant
+    'ignorePassedEvents' => true, // Ignorer les événements passés
 ]);
 
 /**
@@ -42,7 +44,7 @@ $processPDF = function () {
     try {
         // Sauvegarder temporairement le fichier
         $path = $this->file->store('temp', 'local');
-        $fullPath = storage_path('app/private/'.$path);
+        $fullPath = storage_path('app/private/' . $path);
 
         // Utiliser le service pour extraire les données
         $pdfService = new PdfImportService;
@@ -55,7 +57,7 @@ $processPDF = function () {
             'count' => count($result['events'] ?? []),
         ]);
     } catch (\Exception $e) {
-        $this->errorMessage = 'Erreur lors du traitement du PDF : '.$e->getMessage();
+        $this->errorMessage = 'Erreur lors du traitement du PDF : ' . $e->getMessage();
         \Log::error('PDF processing error', [
             'error' => $e->getMessage(),
             'file' => $this->file?->getClientOriginalName(),
@@ -69,7 +71,7 @@ $processPDF = function () {
  * Confirme l'importation et sauvegarde les événements en base de données
  */
 $confirmImport = function () {
-    if (! $this->extractedData || empty($this->extractedData['events'])) {
+    if (!$this->extractedData || empty($this->extractedData['events'])) {
         $this->errorMessage = 'Aucune donnée à importer.';
 
         return;
@@ -79,7 +81,20 @@ $confirmImport = function () {
     $count = 0;
 
     try {
+        // Si on doit remplacer l'emploi du temps existant, supprimer tous les cours
+        if ($this->replaceExisting) {
+            Event::where('type', 'course')->delete();
+        }
+
         foreach ($this->extractedData['events'] as $eventData) {
+            // Ignorer les événements passés si l'option est activée
+            if ($this->ignorePassedEvents) {
+                $eventStart = Carbon::parse($eventData['start_time']);
+                if ($eventStart->isPast()) {
+                    continue;
+                }
+            }
+
             Event::create([
                 'title' => $eventData['title'] ?? 'Cours sans titre',
                 'description' => $eventData['description'] ?? null,
@@ -89,6 +104,8 @@ $confirmImport = function () {
                 'end_time' => $eventData['end_time'],
                 'type' => $eventData['type'] ?? 'course',
                 'color' => $eventData['color'] ?? null,
+                'source' => 'pdf_import',
+                'created_by' => auth()->id(),
             ]);
             $count++;
         }
@@ -97,7 +114,7 @@ $confirmImport = function () {
         $this->dispatch('import-confirmed', ['count' => $count]);
         $this->resetForm();
     } catch (\Exception $e) {
-        $this->errorMessage = 'Erreur lors de l\'importation : '.$e->getMessage();
+        $this->errorMessage = 'Erreur lors de l\'importation : ' . $e->getMessage();
         \Log::error('Import error', [
             'error' => $e->getMessage(),
             'data' => $this->extractedData,
@@ -138,13 +155,15 @@ $resetForm = function () {
     {{-- Avertissement --}}
     <div class="rounded-lg border border-orange-200 bg-orange-50 p-6 dark:border-orange-800 dark:bg-orange-950/30">
         <div class="flex items-start gap-3">
-            <flux:icon.exclamation-triangle class="size-6 shrink-0 text-orange-600 dark:text-orange-400" />
+            <flux:icon.exclamation-triangle class="size-6 shrink-0 text-orange-600 dark:text-orange-400"/>
             <div>
                 <flux:heading size="sm" class="text-lg font-medium text-orange-900 dark:text-orange-200">
                     Extraction automatique avec OCR
                 </flux:heading>
                 <flux:text class="mt-2 text-sm text-orange-700 dark:text-orange-300">
-                    L'extraction depuis PDF utilise la reconnaissance optique de caractères (OCR). La qualité des résultats dépend de la qualité du PDF source. Il est recommandé de vérifier les données extraites avant confirmation.
+                    L'extraction depuis PDF utilise la reconnaissance optique de caractères (OCR). La qualité des
+                    résultats dépend de la qualité du PDF source. Il est recommandé de vérifier les données extraites
+                    avant confirmation.
                 </flux:text>
                 <ul class="mt-3 space-y-1 text-sm text-orange-700 dark:text-orange-300">
                     <li>• Privilégiez les PDF générés numériquement (non scannés)</li>
@@ -158,36 +177,36 @@ $resetForm = function () {
 
     {{-- Messages d'erreur --}}
     @if ($errorMessage)
-    <div class="rounded-lg border border-red-200 bg-red-50 p-6 dark:border-red-800 dark:bg-red-950/30">
-        <div class="flex items-start gap-3">
-            <flux:icon.exclamation-circle class="size-6 shrink-0 text-red-600 dark:text-red-400" />
-            <div>
-                <flux:heading size="sm" class="text-lg font-medium text-red-900 dark:text-red-200">
-                    Erreur
-                </flux:heading>
-                <flux:text class="mt-2 text-sm text-red-700 dark:text-red-300">
-                    {{ $errorMessage }}
-                </flux:text>
+        <div class="rounded-lg border border-red-200 bg-red-50 p-6 dark:border-red-800 dark:bg-red-950/30">
+            <div class="flex items-start gap-3">
+                <flux:icon.exclamation-circle class="size-6 shrink-0 text-red-600 dark:text-red-400"/>
+                <div>
+                    <flux:heading size="sm" class="text-lg font-medium text-red-900 dark:text-red-200">
+                        Erreur
+                    </flux:heading>
+                    <flux:text class="mt-2 text-sm text-red-700 dark:text-red-300">
+                        {{ $errorMessage }}
+                    </flux:text>
+                </div>
             </div>
         </div>
-    </div>
     @endif
 
     {{-- Message de succès --}}
     @if ($importedCount > 0)
-    <div class="rounded-lg border border-green-200 bg-green-50 p-6 dark:border-green-800 dark:bg-green-950/30">
-        <div class="flex items-start gap-3">
-            <flux:icon.check-circle class="size-6 shrink-0 text-green-600 dark:text-green-400" />
-            <div>
-                <flux:heading size="sm" class="text-lg font-medium text-green-900 dark:text-green-200">
-                    Importation réussie
-                </flux:heading>
-                <flux:text class="mt-2 text-sm text-green-700 dark:text-green-300">
-                    {{ $importedCount }} événement(s) ont été importés avec succès.
-                </flux:text>
+        <div class="rounded-lg border border-green-200 bg-green-50 p-6 dark:border-green-800 dark:bg-green-950/30">
+            <div class="flex items-start gap-3">
+                <flux:icon.check-circle class="size-6 shrink-0 text-green-600 dark:text-green-400"/>
+                <div>
+                    <flux:heading size="sm" class="text-lg font-medium text-green-900 dark:text-green-200">
+                        Importation réussie
+                    </flux:heading>
+                    <flux:text class="mt-2 text-sm text-green-700 dark:text-green-300">
+                        {{ $importedCount }} événement(s) ont été importés avec succès.
+                    </flux:text>
+                </div>
             </div>
         </div>
-    </div>
     @endif
 
     {{-- Zone d'upload --}}
@@ -197,8 +216,9 @@ $resetForm = function () {
         </flux:heading>
 
         {{-- Zone de drag & drop --}}
-        <div class="rounded-lg border-2 border-dashed border-zinc-300 bg-zinc-50 p-12 text-center dark:border-zinc-600 dark:bg-zinc-900">
-            <flux:icon.document-text class="mx-auto size-12 text-zinc-400" />
+        <div
+            class="rounded-lg border-2 border-dashed border-zinc-300 bg-zinc-50 p-12 text-center dark:border-zinc-600 dark:bg-zinc-900">
+            <flux:icon.document-text class="mx-auto size-12 text-zinc-400"/>
 
             <flux:heading size="sm" class="mt-4 text-base font-medium">
                 @if ($file && is_object($file))
@@ -221,10 +241,13 @@ $resetForm = function () {
                     class="hidden"
                 />
                 <label for="pdf-upload" class="inline-block cursor-pointer">
-                    <span class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
+                    <span
+                        class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
                         <svg class="size-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M9.25 13.25a.75.75 0 001.5 0V4.636l2.955 3.129a.75.75 0 001.09-1.03l-4.25-4.5a.75.75 0 00-1.09 0l-4.25 4.5a.75.75 0 101.09 1.03L9.25 4.636v8.614z" />
-                            <path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" />
+                            <path
+                                d="M9.25 13.25a.75.75 0 001.5 0V4.636l2.955 3.129a.75.75 0 001.09-1.03l-4.25-4.5a.75.75 0 00-1.09 0l-4.25 4.5a.75.75 0 101.09 1.03L9.25 4.636v8.614z"/>
+                            <path
+                                d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z"/>
                         </svg>
                         Choisir un fichier
                     </span>
@@ -245,61 +268,38 @@ $resetForm = function () {
             {{-- Debug info --}}
             @if ($file)
                 <div class="mt-4 text-xs text-green-600 dark:text-green-400">
-                    ✓ Fichier chargé: {{ $file->getClientOriginalName() }} ({{ number_format($file->getSize() / 1024, 2) }} KB)
+                    ✓ Fichier chargé: {{ $file->getClientOriginalName() }}
+                    ({{ number_format($file->getSize() / 1024, 2) }} KB)
                 </div>
             @endif
         </div>
     </div>
 
-    {{-- Paramètres d'extraction --}}
+    {{-- Options d'importation --}}
     <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
         <flux:heading size="sm" class="mb-4 text-lg font-medium">
-            Paramètres d'extraction OCR
+            Options d'importation
         </flux:heading>
 
         <div class="space-y-4">
-            <div>
-                <flux:field>
-                    <flux:label>Qualité de l'OCR</flux:label>
-                    <flux:select wire:model="ocrQuality">
-                        <option value="low">Rapide (basse qualité)</option>
-                        <option value="medium">Standard (qualité moyenne)</option>
-                        <option value="high">Précis (haute qualité - plus lent)</option>
-                    </flux:select>
-                    <flux:text class="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-                        Une qualité plus élevée améliore la précision mais augmente le temps de traitement
+            <div class="flex items-center justify-between rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
+                <div>
+                    <flux:text class="font-medium">Remplacer l'emploi du temps existant</flux:text>
+                    <flux:text class="text-sm text-zinc-600 dark:text-zinc-400">
+                        Supprimer tous les cours actuels avant l'import
                     </flux:text>
-                </flux:field>
+                </div>
+                <flux:switch wire:model.live="replaceExisting" />
             </div>
 
             <div class="flex items-center justify-between rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
                 <div>
-                    <flux:text class="font-medium">Détection automatique des colonnes</flux:text>
+                    <flux:text class="font-medium">Ignorer les événements passés</flux:text>
                     <flux:text class="text-sm text-zinc-600 dark:text-zinc-400">
-                        Identifier automatiquement les jours et heures
+                        Ne pas importer les cours dont la date est déjà passée
                     </flux:text>
                 </div>
-                <flux:switch disabled />
-            </div>
-
-            <div class="flex items-center justify-between rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
-                <div>
-                    <flux:text class="font-medium">Correction orthographique</flux:text>
-                    <flux:text class="text-sm text-zinc-600 dark:text-zinc-400">
-                        Corriger les erreurs courantes d'OCR
-                    </flux:text>
-                </div>
-                <flux:switch disabled />
-            </div>
-
-            <div class="flex items-center justify-between rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
-                <div>
-                    <flux:text class="font-medium">Extraction intelligente</flux:text>
-                    <flux:text class="text-sm text-zinc-600 dark:text-zinc-400">
-                        Utiliser l'IA pour améliorer la reconnaissance
-                    </flux:text>
-                </div>
-                <flux:switch disabled />
+                <flux:switch wire:model.live="ignorePassedEvents" />
             </div>
         </div>
     </div>
@@ -317,7 +317,7 @@ $resetForm = function () {
 
         {{-- État vide --}}
         <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-8 text-center dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:icon.document-magnifying-glass class="mx-auto size-12 text-zinc-400" />
+            <flux:icon.document-magnifying-glass class="mx-auto size-12 text-zinc-400"/>
             <flux:text class="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
                 Aucun document chargé. L'aperçu apparaîtra ici une fois le fichier uploadé.
             </flux:text>
@@ -334,7 +334,8 @@ $resetForm = function () {
                 Données extraites
             </flux:heading>
             <flux:badge color="{{ $extractedData ? 'blue' : 'zinc' }}" size="sm">
-                {{ $extractedData ? count($extractedData['events'] ?? []) : 0 }} cours détecté{{ $extractedData && count($extractedData['events'] ?? []) > 1 ? 's' : '' }}
+                {{ $extractedData ? count($extractedData['events'] ?? []) : 0 }} cours
+                détecté{{ $extractedData && count($extractedData['events'] ?? []) > 1 ? 's' : '' }}
             </flux:badge>
         </div>
 
@@ -342,29 +343,31 @@ $resetForm = function () {
             {{-- Affichage des données extraites --}}
             <div class="space-y-2 max-h-96 overflow-y-auto">
                 @foreach ($extractedData['events'] as $index => $event)
-                <div class="flex items-center justify-between rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
-                    <div>
-                        <flux:text class="font-medium">{{ $event['title'] ?? 'Cours sans titre' }}</flux:text>
-                        <flux:text class="text-sm text-zinc-600 dark:text-zinc-400">
-                            {{ \Carbon\Carbon::parse($event['start_time'])->format('l d/m/Y • H:i') }} -
-                            {{ \Carbon\Carbon::parse($event['end_time'])->format('H:i') }}
-                            @if (!empty($event['location']))
-                                • {{ $event['location'] }}
+                    <div
+                        class="flex items-center justify-between rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
+                        <div>
+                            <flux:text class="font-medium">{{ $event['title'] ?? 'Cours sans titre' }}</flux:text>
+                            <flux:text class="text-sm text-zinc-600 dark:text-zinc-400">
+                                {{ Carbon::parse($event['start_time'])->format('l d/m/Y • H:i') }} -
+                                {{ Carbon::parse($event['end_time'])->format('H:i') }}
+                                @if (!empty($event['location']))
+                                    • {{ $event['location'] }}
+                                @endif
+                            </flux:text>
+                            @if (!empty($event['teacher']))
+                                <flux:text class="text-xs text-zinc-500 dark:text-zinc-500">
+                                    Prof. {{ $event['teacher'] }} • {{ ucfirst($event['type'] ?? 'course') }}
+                                </flux:text>
                             @endif
-                        </flux:text>
-                        @if (!empty($event['teacher']))
-                        <flux:text class="text-xs text-zinc-500 dark:text-zinc-500">
-                            Prof. {{ $event['teacher'] }} • {{ ucfirst($event['type'] ?? 'course') }}
-                        </flux:text>
-                        @endif
+                        </div>
                     </div>
-                </div>
                 @endforeach
             </div>
         @else
             {{-- État vide --}}
-            <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-8 text-center dark:border-zinc-700 dark:bg-zinc-900">
-                <flux:icon.cpu-chip class="mx-auto size-12 text-zinc-400" />
+            <div
+                class="rounded-lg border border-zinc-200 bg-zinc-50 p-8 text-center dark:border-zinc-700 dark:bg-zinc-900">
+                <flux:icon.cpu-chip class="mx-auto size-12 text-zinc-400"/>
                 <flux:text class="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
                     Les données extraites apparaîtront ici après le traitement du PDF.
                 </flux:text>
@@ -412,23 +415,23 @@ $resetForm = function () {
         </flux:heading>
         <ul class="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
             <li class="flex items-start gap-2">
-                <flux:icon.check-circle class="size-5 shrink-0 text-zinc-400" />
+                <flux:icon.check-circle class="size-5 shrink-0 text-zinc-400"/>
                 <span>Vérifier que toutes les dates sont correctement extraites</span>
             </li>
             <li class="flex items-start gap-2">
-                <flux:icon.check-circle class="size-5 shrink-0 text-zinc-400" />
+                <flux:icon.check-circle class="size-5 shrink-0 text-zinc-400"/>
                 <span>Confirmer les heures de début et de fin de chaque cours</span>
             </li>
             <li class="flex items-start gap-2">
-                <flux:icon.check-circle class="size-5 shrink-0 text-zinc-400" />
+                <flux:icon.check-circle class="size-5 shrink-0 text-zinc-400"/>
                 <span>Vérifier l'orthographe des noms de matières et enseignants</span>
             </li>
             <li class="flex items-start gap-2">
-                <flux:icon.check-circle class="size-5 shrink-0 text-zinc-400" />
+                <flux:icon.check-circle class="size-5 shrink-0 text-zinc-400"/>
                 <span>Confirmer les numéros de salles</span>
             </li>
             <li class="flex items-start gap-2">
-                <flux:icon.check-circle class="size-5 shrink-0 text-zinc-400" />
+                <flux:icon.check-circle class="size-5 shrink-0 text-zinc-400"/>
                 <span>S'assurer que les types de cours (CM/TD/TP) sont corrects</span>
             </li>
         </ul>
