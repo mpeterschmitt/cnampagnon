@@ -17,7 +17,8 @@
         "laravel/telescope": "^5.15",
         "laravel/tinker": "^2.10.1",
         "livewire/flux": "^2.1.1",
-        "livewire/volt": "^1.7.0"
+        "livewire/volt": "^1.7.0",
+        "spatie/laravel-slack-alerts": "^1.8"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

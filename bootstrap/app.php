@@ -15,5 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
             "admin" => \App\Http\Middleware\EnsureUserIsAdmin::class,
         ]);
     })
+    ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule): void {
+        // Envoyer les rappels de devoirs chaque jour à 9h du matin
+        $schedule->command('homework:send-reminders')
+            ->dailyAt('09:00')
+            ->timezone('Europe/Paris');
+    })
     ->withExceptions(function (Exceptions $exceptions): void {})
     ->create();
