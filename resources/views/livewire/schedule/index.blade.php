@@ -185,13 +185,7 @@ $createHomeworkAt = function ($date, $hour) {
                 Aujourd'hui
             </flux:button>
             <a
-                href="{{ route('schedule.export.ics', [
-                    'start_date' => $selectedWeek->format('Y-m-d'),
-                    'end_date' => $selectedWeek->copy()->endOfWeek()->format('Y-m-d'),
-                    'subject' => $selectedSubject,
-                    'teacher' => $selectedTeacher,
-                    'course_type' => $selectedCourseType,
-                ]) }}"
+                href="{{ route('schedule.export.ics') }}"
                 class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
             >
                 <svg class="size-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
