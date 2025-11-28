@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Models\Event;
+use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 
@@ -184,7 +185,7 @@ class SendHomeworkReminders extends Command
 
         try {
             Http::post($webhookUrl, $payload);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error("Erreur lors de l'envoi du webhook : {$e->getMessage()}");
         }
     }

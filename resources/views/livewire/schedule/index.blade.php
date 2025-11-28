@@ -1,5 +1,6 @@
 <?php
 
+use Carbon\Carbon;
 use function Livewire\Volt\computed;
 use function Livewire\Volt\layout;
 use function Livewire\Volt\state;
@@ -130,7 +131,7 @@ $clearFilters = function () {
  */
 $createHomeworkAt = function ($date, $hour) {
     // Créer une date avec l'heure sélectionnée
-    $dueDate = \Carbon\Carbon::parse($date)->setTime($hour, 0);
+    $dueDate = Carbon::parse($date)->setTime($hour, 0);
 
     // Chercher s'il y a un cours à cette heure pour pré-remplir la matière et l'enseignant
     $dayStart = $dueDate->copy()->startOfHour();
@@ -138,13 +139,13 @@ $createHomeworkAt = function ($date, $hour) {
 
     $courseAtTime = \App\Models\Event::query()
         ->courses()
-        ->where(function($q) use ($dayStart, $dayEnd) {
+        ->where(function ($q) use ($dayStart, $dayEnd) {
             $q->whereBetween('start_time', [$dayStart, $dayEnd])
-              ->orWhereBetween('end_time', [$dayStart, $dayEnd])
-              ->orWhere(function($q) use ($dayStart, $dayEnd) {
-                  $q->where('start_time', '<=', $dayStart)
-                    ->where('end_time', '>=', $dayEnd);
-              });
+                ->orWhereBetween('end_time', [$dayStart, $dayEnd])
+                ->orWhere(function ($q) use ($dayStart, $dayEnd) {
+                    $q->where('start_time', '<=', $dayStart)
+                        ->where('end_time', '>=', $dayEnd);
+                });
         })
         ->first();
 
@@ -189,8 +190,10 @@ $createHomeworkAt = function ($date, $hour) {
                 class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
             >
                 <svg class="size-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z" />
-                    <path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" />
+                    <path
+                        d="M10.75 2.75a.75.75 0 00-1.5 0v8.614L6.295 8.235a.75.75 0 10-1.09 1.03l4.25 4.5a.75.75 0 001.09 0l4.25-4.5a.75.75 0 00-1.09-1.03l-2.955 3.129V2.75z"/>
+                    <path
+                        d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z"/>
                 </svg>
                 Exporter (ICS)
             </a>
@@ -200,69 +203,73 @@ $createHomeworkAt = function ($date, $hour) {
     {{-- Astuce pour ajouter des devoirs --}}
     <div class="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/30">
         <div class="flex items-start gap-3">
-            <svg class="size-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg class="size-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" fill="none" stroke="currentColor"
+                 viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             <flux:text class="text-sm text-blue-700 dark:text-blue-300">
-                <strong>Astuce :</strong> Cliquez sur un créneau horaire vide dans le calendrier pour ajouter rapidement un devoir à cette date et heure.
+                <strong>Astuce :</strong> Cliquez sur un créneau horaire vide dans le calendrier pour ajouter rapidement
+                un devoir à cette date et heure.
             </flux:text>
         </div>
     </div>
 
     {{-- Section des filtres --}}
-{{--    <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">--}}
-{{--        <div class="mb-4 flex items-center justify-between">--}}
-{{--            <flux:heading size="sm" class="text-lg font-medium">--}}
-{{--                Filtres--}}
-{{--            </flux:heading>--}}
-{{--            @if($selectedSubject || $selectedTeacher || $selectedCourseType)--}}
-{{--                <flux:button variant="ghost" size="sm" wire:click="clearFilters">--}}
-{{--                    Réinitialiser--}}
-{{--                </flux:button>--}}
-{{--            @endif--}}
-{{--        </div>--}}
+    {{--    <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">--}}
+    {{--        <div class="mb-4 flex items-center justify-between">--}}
+    {{--            <flux:heading size="sm" class="text-lg font-medium">--}}
+    {{--                Filtres--}}
+    {{--            </flux:heading>--}}
+    {{--            @if($selectedSubject || $selectedTeacher || $selectedCourseType)--}}
+    {{--                <flux:button variant="ghost" size="sm" wire:click="clearFilters">--}}
+    {{--                    Réinitialiser--}}
+    {{--                </flux:button>--}}
+    {{--            @endif--}}
+    {{--        </div>--}}
 
-{{--        <div class="grid gap-4 sm:grid-cols-3">--}}
-{{--            --}}{{-- Filtre par matière --}}
-{{--            <div>--}}
-{{--                <flux:field>--}}
-{{--                    <flux:label>Matière</flux:label>--}}
-{{--                    <flux:select wire:model.live="selectedSubject" placeholder="Toutes les matières">--}}
-{{--                        @foreach($this->subjects as $subject)--}}
-{{--                            <option value="{{ $subject }}">{{ $subject }}</option>--}}
-{{--                        @endforeach--}}
-{{--                    </flux:select>--}}
-{{--                </flux:field>--}}
-{{--            </div>--}}
+    {{--        <div class="grid gap-4 sm:grid-cols-3">--}}
+    {{--            --}}{{-- Filtre par matière --}}
+    {{--            <div>--}}
+    {{--                <flux:field>--}}
+    {{--                    <flux:label>Matière</flux:label>--}}
+    {{--                    <flux:select wire:model.live="selectedSubject" placeholder="Toutes les matières">--}}
+    {{--                        @foreach($this->subjects as $subject)--}}
+    {{--                            <option value="{{ $subject }}">{{ $subject }}</option>--}}
+    {{--                        @endforeach--}}
+    {{--                    </flux:select>--}}
+    {{--                </flux:field>--}}
+    {{--            </div>--}}
 
-{{--            --}}{{-- Filtre par enseignant --}}
-{{--            <div>--}}
-{{--                <flux:field>--}}
-{{--                    <flux:label>Enseignant</flux:label>--}}
-{{--                    <flux:select wire:model.live="selectedTeacher" placeholder="Tous les enseignants">--}}
-{{--                        @foreach($this->teachers as $teacher)--}}
-{{--                            <option value="{{ $teacher }}">{{ $teacher }}</option>--}}
-{{--                        @endforeach--}}
-{{--                    </flux:select>--}}
-{{--                </flux:field>--}}
-{{--            </div>--}}
+    {{--            --}}{{-- Filtre par enseignant --}}
+    {{--            <div>--}}
+    {{--                <flux:field>--}}
+    {{--                    <flux:label>Enseignant</flux:label>--}}
+    {{--                    <flux:select wire:model.live="selectedTeacher" placeholder="Tous les enseignants">--}}
+    {{--                        @foreach($this->teachers as $teacher)--}}
+    {{--                            <option value="{{ $teacher }}">{{ $teacher }}</option>--}}
+    {{--                        @endforeach--}}
+    {{--                    </flux:select>--}}
+    {{--                </flux:field>--}}
+    {{--            </div>--}}
 
-{{--            --}}{{-- Filtre par type de cours --}}
-{{--            <div>--}}
-{{--                <flux:field>--}}
-{{--                    <flux:label>Type de cours</flux:label>--}}
-{{--                    <flux:select wire:model.live="selectedCourseType" placeholder="Tous les types">--}}
-{{--                        <option value="CM">Cours Magistral (CM)</option>--}}
-{{--                        <option value="TD">Travaux Dirigés (TD)</option>--}}
-{{--                        <option value="TP">Travaux Pratiques (TP)</option>--}}
-{{--                    </flux:select>--}}
-{{--                </flux:field>--}}
-{{--            </div>--}}
-{{--        </div>--}}
-{{--    </div>--}}
+    {{--            --}}{{-- Filtre par type de cours --}}
+    {{--            <div>--}}
+    {{--                <flux:field>--}}
+    {{--                    <flux:label>Type de cours</flux:label>--}}
+    {{--                    <flux:select wire:model.live="selectedCourseType" placeholder="Tous les types">--}}
+    {{--                        <option value="CM">Cours Magistral (CM)</option>--}}
+    {{--                        <option value="TD">Travaux Dirigés (TD)</option>--}}
+    {{--                        <option value="TP">Travaux Pratiques (TP)</option>--}}
+    {{--                    </flux:select>--}}
+    {{--                </flux:field>--}}
+    {{--            </div>--}}
+    {{--        </div>--}}
+    {{--    </div>--}}
 
     {{-- Navigation de semaine --}}
-    <div class="flex items-center justify-between rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
+    <div
+        class="flex items-center justify-between rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
         <flux:button variant="ghost" icon="chevron-left" wire:click="previousWeek">
             Semaine précédente
         </flux:button>
@@ -298,7 +305,8 @@ $createHomeworkAt = function ($date, $hour) {
                     <flux:text class="block text-sm font-medium">
                         {{ $day->isoFormat('dddd') }}
                     </flux:text>
-                    <flux:text class="mt-1 block text-lg font-semibold {{ $day->isToday() ? 'text-blue-600 dark:text-blue-400' : '' }}">
+                    <flux:text
+                        class="mt-1 block text-lg font-semibold {{ $day->isToday() ? 'text-blue-600 dark:text-blue-400' : '' }}">
                         {{ $day->format('d') }}
                     </flux:text>
                 </div>
@@ -314,7 +322,8 @@ $createHomeworkAt = function ($date, $hour) {
                     <div class="grid grid-cols-6">
                         @for($hour = 8; $hour <= 18; $hour++)
                             {{-- Colonne des heures --}}
-                            <div class="border-r border-t border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900 h-20">
+                            <div
+                                class="border-r border-t border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900 h-20">
                                 <flux:text class="text-xs font-medium text-zinc-600 dark:text-zinc-400">
                                     {{ sprintf('%02d:00', $hour) }}
                                 </flux:text>
@@ -328,9 +337,12 @@ $createHomeworkAt = function ($date, $hour) {
                                     title="Cliquer pour ajouter un devoir à {{ $day->format('d/m') }} à {{ $hour }}h"
                                 >
                                     {{-- Indicateur visuel au survol --}}
-                                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-0">
-                                        <svg class="size-8 text-blue-400 dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                    <div
+                                        class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-0">
+                                        <svg class="size-8 text-blue-400 dark:text-blue-500" fill="none"
+                                             stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M12 4v16m8-8H4"/>
                                         </svg>
                                     </div>
                                 </div>
@@ -458,7 +470,8 @@ $createHomeworkAt = function ($date, $hour) {
                                     >
                                         <div class="flex flex-col h-full">
                                             <div class="flex items-center justify-between gap-1">
-                                                <flux:text class="font-semibold text-xs truncate">📝 {{ $event->title }}</flux:text>
+                                                <flux:text class="font-semibold text-xs truncate">
+                                                    📝 {{ $event->title }}</flux:text>
                                                 @if($event->completed)
                                                     <span class="text-green-600 dark:text-green-400 text-sm">✓</span>
                                                 @endif
@@ -493,11 +506,14 @@ $createHomeworkAt = function ($date, $hour) {
                                     >
                                         <div class="flex flex-col h-full">
                                             <div class="flex items-center justify-between gap-1">
-                                                <flux:text class="font-semibold text-xs truncate">{{ $event->title }}</flux:text>
-                                                <flux:badge size="sm" color="zinc" class="shrink-0">{{ $event->course_type }}</flux:badge>
+                                                <flux:text
+                                                    class="font-semibold text-xs truncate">{{ $event->title }}</flux:text>
+                                                <flux:badge size="sm" color="zinc"
+                                                            class="shrink-0">{{ $event->course_type }}</flux:badge>
                                             </div>
                                             <flux:text class="mt-1 text-xs">
-                                                {{ $event->start_time->format('H:i') }} - {{ $event->end_time->format('H:i') }}
+                                                {{ $event->start_time->format('H:i') }}
+                                                - {{ $event->end_time->format('H:i') }}
                                             </flux:text>
                                             @if($event->room && $height > 60)
                                                 <flux:text class="mt-0.5 text-xs opacity-75 truncate">
@@ -525,8 +541,10 @@ $createHomeworkAt = function ($date, $hour) {
         <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
             <div class="mb-4 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <svg class="size-6 text-zinc-600 dark:text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    <svg class="size-6 text-zinc-600 dark:text-zinc-400" fill="none" stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
                     <flux:heading size="sm" class="text-lg font-medium">
                         Devoirs de la semaine
@@ -549,9 +567,12 @@ $createHomeworkAt = function ($date, $hour) {
                         $isOverdue = $homework->due_date < now() && !$homework->completed;
                     @endphp
 
-                    <a href="{{ route('homeworks.edit', $homework) }}" class="block rounded-lg border p-4 transition-colors hover:border-zinc-400 dark:hover:border-zinc-600 {{ $homeworkBorderClass }}" wire:navigate>
+                    <a href="{{ route('homeworks.edit', $homework) }}"
+                       class="block rounded-lg border p-4 transition-colors hover:border-zinc-400 dark:hover:border-zinc-600 {{ $homeworkBorderClass }}"
+                       wire:navigate>
                         <div class="flex items-start justify-between gap-2 mb-2">
-                            <flux:text class="font-semibold text-sm {{ $homework->completed ? 'line-through text-zinc-500' : '' }}">
+                            <flux:text
+                                class="font-semibold text-sm {{ $homework->completed ? 'line-through text-zinc-500' : '' }}">
                                 {{ $homework->title }}
                             </flux:text>
                             @if($homework->completed)
@@ -562,7 +583,8 @@ $createHomeworkAt = function ($date, $hour) {
                         <div class="space-y-1 text-xs text-zinc-600 dark:text-zinc-400">
                             <div class="flex items-center gap-1">
                                 <svg class="size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                 </svg>
                                 <span>{{ $homework->due_date->format('D d/m à H:i') }}</span>
                                 @if($isOverdue)
@@ -573,7 +595,8 @@ $createHomeworkAt = function ($date, $hour) {
                             @if($homework->subject)
                                 <div class="flex items-center gap-1">
                                     <svg class="size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
                                     </svg>
                                     <span>{{ $homework->subject }}</span>
                                 </div>
@@ -598,7 +621,7 @@ $createHomeworkAt = function ($date, $hour) {
     {{-- Section des changements de dernière minute --}}
     <div class="rounded-lg border border-orange-200 bg-orange-50 p-6 dark:border-orange-800 dark:bg-orange-950/30">
         <div class="mb-4 flex items-start gap-3">
-            <flux:icon.exclamation-triangle class="size-6 text-orange-600 dark:text-orange-400" />
+            <flux:icon.exclamation-triangle class="size-6 text-orange-600 dark:text-orange-400"/>
             <div class="flex-1">
                 <flux:heading size="sm" class="text-lg font-medium text-orange-900 dark:text-orange-200">
                     Changements de dernière minute
@@ -659,15 +682,15 @@ $createHomeworkAt = function ($date, $hour) {
                 </flux:text>
                 <div class="space-y-2">
                     <div class="flex items-center gap-2">
-                        <flux:icon.check-circle class="size-4 text-green-600" />
+                        <flux:icon.check-circle class="size-4 text-green-600"/>
                         <flux:text class="text-sm">Cours confirmé</flux:text>
                     </div>
                     <div class="flex items-center gap-2">
-                        <flux:icon.exclamation-triangle class="size-4 text-orange-600" />
+                        <flux:icon.exclamation-triangle class="size-4 text-orange-600"/>
                         <flux:text class="text-sm">Changement récent</flux:text>
                     </div>
                     <div class="flex items-center gap-2">
-                        <flux:icon.x-circle class="size-4 text-red-600" />
+                        <flux:icon.x-circle class="size-4 text-red-600"/>
                         <flux:text class="text-sm">Cours annulé</flux:text>
                     </div>
                 </div>

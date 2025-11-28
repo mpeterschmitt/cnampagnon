@@ -112,4 +112,22 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Allowed Email Domains
+    |--------------------------------------------------------------------------
+    |
+    | This option defines the email domains that are allowed to register.
+    | You can specify multiple domains separated by commas in the environment
+    | variable. Use wildcards for subdomains (e.g., *.example.com).
+    | Leave empty to allow all domains.
+    |
+    | Example: "example.com,*.university.edu,company.org"
+    |
+    */
+
+    'allowed_email_domains' => array_filter(
+        array_map('trim', explode(',', env('ALLOWED_EMAIL_DOMAINS', '')))
+    ),
+
 ];

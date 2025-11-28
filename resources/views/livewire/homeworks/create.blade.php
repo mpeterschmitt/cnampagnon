@@ -1,5 +1,6 @@
 <?php
 
+use Carbon\Carbon;
 use function Livewire\Volt\{computed, layout, rules, state, mount};
 use App\Http\Requests\StoreHomeworkRequest;
 use App\Models\Event;
@@ -25,7 +26,7 @@ mount(function ($homework = null) {
     // Récupérer la date de rendu depuis les query params si disponible (venant du calendrier)
     $dueDateFromQuery = request()->query('due_date');
     $defaultDueDate = $dueDateFromQuery
-        ? \Carbon\Carbon::parse($dueDateFromQuery)->format('Y-m-d\TH:i')
+        ? Carbon::parse($dueDateFromQuery)->format('Y-m-d\TH:i')
         : now()->addWeek()->format('Y-m-d\TH:i');
 
     // Récupérer la matière et l'enseignant depuis les query params (auto-rempli depuis le calendrier)
@@ -131,7 +132,7 @@ $save = function () {
     // Gestion intelligente des dates :
     // - Si start_time est fourni : utiliser start_time, et end_time = start_time + 1 min (si non fourni)
     // - Si start_time est vide : start_time = due_date + 1 min, end_time = due_date + 2 min (si non fourni)
-    $dueDate = \Carbon\Carbon::parse($this->form['due_date']);
+    $dueDate = Carbon::parse($this->form['due_date']);
 
     if ($this->form['start_time']) {
         $data['start_time'] = $this->form['start_time'];
@@ -139,7 +140,7 @@ $save = function () {
             $data['end_time'] = $this->form['end_time'];
         } else {
             // end_time = start_time + 1 minute
-            $startTime = \Carbon\Carbon::parse($this->form['start_time']);
+            $startTime = Carbon::parse($this->form['start_time']);
             $data['end_time'] = $startTime->copy()->addMinute()->format('Y-m-d H:i:s');
         }
     } else {
@@ -203,7 +204,7 @@ $cancel = function () {
                             placeholder="Ex: DM de Mathématiques"
                             required
                         />
-                        <flux:error name="form.title" />
+                        <flux:error name="form.title"/>
                     </flux:field>
 
                     {{-- Description --}}
@@ -214,7 +215,7 @@ $cancel = function () {
                             placeholder="Détails du devoir..."
                             rows="4"
                         />
-                        <flux:error name="form.description" />
+                        <flux:error name="form.description"/>
                     </flux:field>
 
                     {{-- Matière et Enseignant --}}
@@ -231,7 +232,7 @@ $cancel = function () {
                                     <option value="{{ $subject }}">
                                 @endforeach
                             </datalist>
-                            <flux:error name="form.subject" />
+                            <flux:error name="form.subject"/>
                         </flux:field>
 
                         <flux:field>
@@ -240,7 +241,7 @@ $cancel = function () {
                                 wire:model="form.teacher"
                                 placeholder="Ex: M. Dupont"
                             />
-                            <flux:error name="form.teacher" />
+                            <flux:error name="form.teacher"/>
                         </flux:field>
                     </div>
 
@@ -252,7 +253,7 @@ $cancel = function () {
                             <option value="medium">Moyenne</option>
                             <option value="high">Élevée</option>
                         </flux:select>
-                        <flux:error name="form.priority" />
+                        <flux:error name="form.priority"/>
                     </flux:field>
 
                     {{-- Date de rendu --}}
@@ -263,7 +264,7 @@ $cancel = function () {
                             type="datetime-local"
                             required
                         />
-                        <flux:error name="form.due_date" />
+                        <flux:error name="form.due_date"/>
                     </flux:field>
                 </div>
             </div>
@@ -283,7 +284,7 @@ $cancel = function () {
                                 wire:model="form.start_time"
                                 type="datetime-local"
                             />
-                            <flux:error name="form.start_time" />
+                            <flux:error name="form.start_time"/>
                             <flux:text class="text-xs text-zinc-500">
                                 Optionnel : date de début du travail
                             </flux:text>
@@ -295,7 +296,7 @@ $cancel = function () {
                                 wire:model="form.end_time"
                                 type="datetime-local"
                             />
-                            <flux:error name="form.end_time" />
+                            <flux:error name="form.end_time"/>
                             <flux:text class="text-xs text-zinc-500">
                                 Par défaut : 1 minute après la date de début
                             </flux:text>
@@ -309,7 +310,7 @@ $cancel = function () {
                             wire:model="form.location"
                             placeholder="Ex: Salle B101, À rendre en ligne"
                         />
-                        <flux:error name="form.location" />
+                        <flux:error name="form.location"/>
                     </flux:field>
 
                     {{-- Couleur --}}
@@ -327,7 +328,7 @@ $cancel = function () {
                                 class="flex-1"
                             />
                         </div>
-                        <flux:error name="form.color" />
+                        <flux:error name="form.color"/>
                     </flux:field>
                 </div>
             </div>
