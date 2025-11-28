@@ -39,12 +39,45 @@ $weekDays = computed(function () {
 
 /**
  * Computed property pour obtenir les cours de la semaine
- * TODO: Remplacer par des données depuis la base de données ou une API
  */
 $courses = computed(function () {
-    // Placeholder: données de démonstration
-    // À remplacer par: Course::query()->whereBetween('start_time', [...])->get()
-    return collect([]);
+    $startOfWeek = $this->selectedWeek->copy()->startOfWeek();
+    $endOfWeek = $this->selectedWeek->copy()->endOfWeek();
+
+    return \App\Models\Event::query()
+        ->courses()
+        ->betweenDates($startOfWeek, $endOfWeek)
+        ->forSubject($this->selectedSubject)
+        ->forTeacher($this->selectedTeacher)
+        ->forCourseType($this->selectedCourseType)
+        ->orderBy('start_time')
+        ->get();
+});
+
+/**
+ * Computed property pour obtenir les matières disponibles
+ */
+$subjects = computed(function () {
+    return \App\Models\Event::query()
+        ->courses()
+        ->whereNotNull('subject')
+        ->distinct()
+        ->pluck('subject')
+        ->sort()
+        ->values();
+});
+
+/**
+ * Computed property pour obtenir les enseignants disponibles
+ */
+$teachers = computed(function () {
+    return \App\Models\Event::query()
+        ->courses()
+        ->whereNotNull('teacher')
+        ->distinct()
+        ->pluck('teacher')
+        ->sort()
+        ->values();
 });
 
 /**
@@ -118,9 +151,9 @@ $clearFilters = function () {
                 <flux:field>
                     <flux:label>Matière</flux:label>
                     <flux:select wire:model.live="selectedSubject" placeholder="Toutes les matières">
-                        {{-- TODO: Charger dynamiquement depuis la base de données --}}
-                        {{-- <option value="math">Mathématiques</option> --}}
-                        {{-- <option value="physics">Physique</option> --}}
+                        @foreach($this->subjects as $subject)
+                            <option value="{{ $subject }}">{{ $subject }}</option>
+                        @endforeach
                     </flux:select>
                 </flux:field>
             </div>
@@ -130,9 +163,9 @@ $clearFilters = function () {
                 <flux:field>
                     <flux:label>Enseignant</flux:label>
                     <flux:select wire:model.live="selectedTeacher" placeholder="Tous les enseignants">
-                        {{-- TODO: Charger dynamiquement depuis la base de données --}}
-                        {{-- <option value="1">M. Dupont</option> --}}
-                        {{-- <option value="2">Mme Martin</option> --}}
+                        @foreach($this->teachers as $teacher)
+                            <option value="{{ $teacher }}">{{ $teacher }}</option>
+                        @endforeach
                     </flux:select>
                 </flux:field>
             </div>
@@ -142,9 +175,9 @@ $clearFilters = function () {
                 <flux:field>
                     <flux:label>Type de cours</flux:label>
                     <flux:select wire:model.live="selectedCourseType" placeholder="Tous les types">
-                        <option value="cm">Cours Magistral (CM)</option>
-                        <option value="td">Travaux Dirigés (TD)</option>
-                        <option value="tp">Travaux Pratiques (TP)</option>
+                        <option value="CM">Cours Magistral (CM)</option>
+                        <option value="TD">Travaux Dirigés (TD)</option>
+                        <option value="TP">Travaux Pratiques (TP)</option>
                     </flux:select>
                 </flux:field>
             </div>
@@ -198,16 +231,8 @@ $clearFilters = function () {
         {{-- Grille horaire --}}
         <div class="overflow-x-auto">
             <div class="min-w-full">
-                {{--
-                    TODO: Implémenter la grille horaire avec les créneaux
-                    - Créer une boucle pour les heures (8h00 - 18h00)
-                    - Pour chaque heure, afficher les créneaux disponibles
-                    - Positionner les cours en fonction de leur horaire
-                    - Gérer les cours qui se chevauchent
-                    - Ajouter la possibilité de cliquer sur un cours pour voir les détails
-                --}}
                 <div class="grid grid-cols-6">
-                    {{-- Exemple de ligne horaire (à répéter pour chaque créneau) --}}
+                    {{-- Boucle sur les heures de 8h à 18h --}}
                     @for($hour = 8; $hour <= 18; $hour++)
                         {{-- Colonne des heures --}}
                         <div class="border-r border-t border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900">
@@ -218,15 +243,51 @@ $clearFilters = function () {
 
                         {{-- Colonnes des jours --}}
                         @foreach($this->weekDays as $day)
-                            <div class="min-h-[60px] border-t border-zinc-200 p-2 dark:border-zinc-700 {{ $day->isToday() ? 'bg-zinc-50 dark:bg-zinc-900/50' : '' }}">
-                                {{--
-                                    TODO: Afficher les cours pour ce créneau
-                                    - Vérifier si un cours existe à cette heure pour ce jour
-                                    - Afficher les détails du cours (matière, salle, enseignant)
-                                    - Gérer les différentes durées de cours
-                                    - Ajouter des indicateurs visuels (couleurs par matière)
-                                    - Afficher les changements de dernière minute avec un badge
-                                --}}
+                            @php
+                                // Récupérer les cours pour ce jour et cette heure
+                                $dayStart = $day->copy()->setTime($hour, 0, 0);
+                                $dayEnd = $day->copy()->setTime($hour, 59, 59);
+
+                                $coursesForSlot = $this->courses->filter(function($course) use ($dayStart, $dayEnd) {
+                                    return $course->start_time->between($dayStart, $dayEnd) ||
+                                           $course->end_time->between($dayStart, $dayEnd) ||
+                                           ($course->start_time->lessThan($dayStart) && $course->end_time->greaterThan($dayEnd));
+                                });
+                            @endphp
+
+                            <div class="relative min-h-[60px] border-t border-zinc-200 p-2 dark:border-zinc-700 {{ $day->isToday() ? 'bg-zinc-50 dark:bg-zinc-900/50' : '' }}">
+                                @foreach($coursesForSlot as $course)
+                                    @if($course->start_time->hour === $hour)
+                                        @php
+                                            $courseTypeColors = [
+                                                'CM' => 'bg-blue-100 border-blue-300 text-blue-900 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-200',
+                                                'TD' => 'bg-green-100 border-green-300 text-green-900 dark:bg-green-950 dark:border-green-800 dark:text-green-200',
+                                                'TP' => 'bg-purple-100 border-purple-300 text-purple-900 dark:bg-purple-950 dark:border-purple-800 dark:text-purple-200',
+                                            ];
+                                            $colorClass = $courseTypeColors[$course->course_type] ?? 'bg-zinc-100 border-zinc-300 text-zinc-900 dark:bg-zinc-950 dark:border-zinc-800 dark:text-zinc-200';
+                                        @endphp
+
+                                        <div class="mb-1 rounded border {{ $colorClass }} p-2 text-xs">
+                                            <div class="flex items-center justify-between">
+                                                <flux:text class="font-semibold">{{ $course->title }}</flux:text>
+                                                <flux:badge size="sm" color="zinc">{{ $course->course_type }}</flux:badge>
+                                            </div>
+                                            <flux:text class="mt-1 text-xs">
+                                                {{ $course->start_time->format('H:i') }} - {{ $course->end_time->format('H:i') }}
+                                            </flux:text>
+                                            @if($course->room)
+                                                <flux:text class="mt-0.5 text-xs opacity-75">
+                                                    📍 {{ $course->room }}
+                                                </flux:text>
+                                            @endif
+                                            @if($course->teacher)
+                                                <flux:text class="mt-0.5 text-xs opacity-75">
+                                                    👤 {{ $course->teacher }}
+                                                </flux:text>
+                                            @endif
+                                        </div>
+                                    @endif
+                                @endforeach
                             </div>
                         @endforeach
                     @endfor

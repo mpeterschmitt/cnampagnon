@@ -1,6 +1,12 @@
 <?php
 
-use function Livewire\Volt\{layout, state};
+use App\Models\Event;
+use App\Services\PdfImportService;
+use Livewire\WithFileUploads;
+
+use function Livewire\Volt\layout;
+use function Livewire\Volt\state;
+use function Livewire\Volt\uses;
 
 /**
  * Composant d'importation PDF vers l'emploi du temps (Admin)
@@ -8,8 +14,8 @@ use function Livewire\Volt\{layout, state};
  * Permet aux administrateurs d'importer un fichier PDF contenant un emploi du temps
  * et d'extraire automatiquement les informations de cours.
  */
-
 layout('components.layouts.app');
+uses([WithFileUploads::class]);
 
 // État du composant
 state([
@@ -17,35 +23,97 @@ state([
     'processing' => false,       // État de traitement en cours
     'extractedData' => null,     // Données extraites du PDF
     'ocrQuality' => 'high',      // Qualité de l'OCR (low, medium, high)
+    'importedCount' => 0,        // Nombre d'événements importés
+    'errorMessage' => null,      // Message d'erreur éventuel
 ]);
 
 /**
- * Action pour traiter le fichier PDF
- * TODO: Implémenter l'extraction OCR du PDF
+ * Traite le fichier PDF uploadé
+ * Extraction automatique via Python + OCR
  */
 $processPDF = function () {
+    $this->validate([
+        'file' => 'required|file|mimes:pdf|max:10240', // 10 MB max
+    ]);
+
     $this->processing = true;
-    // Placeholder: Simuler le traitement
-    sleep(2);
-    $this->processing = false;
-    $this->dispatch('processing-complete');
+    $this->errorMessage = null;
+
+    try {
+        // Sauvegarder temporairement le fichier
+        $path = $this->file->store('temp', 'local');
+        $fullPath = storage_path('app/private/'.$path);
+
+        // Utiliser le service pour extraire les données
+        $pdfService = new PdfImportService;
+        $result = $pdfService->processFile($fullPath);
+
+        // Stocker les données extraites
+        $this->extractedData = $result;
+
+        $this->dispatch('processing-complete', [
+            'count' => count($result['events'] ?? []),
+        ]);
+    } catch (\Exception $e) {
+        $this->errorMessage = 'Erreur lors du traitement du PDF : '.$e->getMessage();
+        \Log::error('PDF processing error', [
+            'error' => $e->getMessage(),
+            'file' => $this->file?->getClientOriginalName(),
+        ]);
+    } finally {
+        $this->processing = false;
+    }
 };
 
 /**
- * Action pour confirmer l'importation
- * TODO: Implémenter l'insertion en base de données
+ * Confirme l'importation et sauvegarde les événements en base de données
  */
 $confirmImport = function () {
-    // Placeholder
-    $this->dispatch('import-confirmed');
+    if (! $this->extractedData || empty($this->extractedData['events'])) {
+        $this->errorMessage = 'Aucune donnée à importer.';
+
+        return;
+    }
+
+    $this->processing = true;
+    $count = 0;
+
+    try {
+        foreach ($this->extractedData['events'] as $eventData) {
+            Event::create([
+                'title' => $eventData['title'] ?? 'Cours sans titre',
+                'description' => $eventData['description'] ?? null,
+                'teacher' => $eventData['teacher'] ?? null,
+                'location' => $eventData['location'] ?? null,
+                'start_time' => $eventData['start_time'],
+                'end_time' => $eventData['end_time'],
+                'type' => $eventData['type'] ?? 'course',
+                'color' => $eventData['color'] ?? null,
+            ]);
+            $count++;
+        }
+
+        $this->importedCount = $count;
+        $this->dispatch('import-confirmed', ['count' => $count]);
+        $this->resetForm();
+    } catch (\Exception $e) {
+        $this->errorMessage = 'Erreur lors de l\'importation : '.$e->getMessage();
+        \Log::error('Import error', [
+            'error' => $e->getMessage(),
+            'data' => $this->extractedData,
+        ]);
+    } finally {
+        $this->processing = false;
+    }
 };
 
 /**
- * Action pour annuler et réinitialiser
+ * Réinitialise le formulaire
  */
 $resetForm = function () {
     $this->file = null;
     $this->extractedData = null;
+    $this->errorMessage = null;
 };
 
 ?>
@@ -88,6 +156,40 @@ $resetForm = function () {
         </div>
     </div>
 
+    {{-- Messages d'erreur --}}
+    @if ($errorMessage)
+    <div class="rounded-lg border border-red-200 bg-red-50 p-6 dark:border-red-800 dark:bg-red-950/30">
+        <div class="flex items-start gap-3">
+            <flux:icon.exclamation-circle class="size-6 shrink-0 text-red-600 dark:text-red-400" />
+            <div>
+                <flux:heading size="sm" class="text-lg font-medium text-red-900 dark:text-red-200">
+                    Erreur
+                </flux:heading>
+                <flux:text class="mt-2 text-sm text-red-700 dark:text-red-300">
+                    {{ $errorMessage }}
+                </flux:text>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- Message de succès --}}
+    @if ($importedCount > 0)
+    <div class="rounded-lg border border-green-200 bg-green-50 p-6 dark:border-green-800 dark:bg-green-950/30">
+        <div class="flex items-start gap-3">
+            <flux:icon.check-circle class="size-6 shrink-0 text-green-600 dark:text-green-400" />
+            <div>
+                <flux:heading size="sm" class="text-lg font-medium text-green-900 dark:text-green-200">
+                    Importation réussie
+                </flux:heading>
+                <flux:text class="mt-2 text-sm text-green-700 dark:text-green-300">
+                    {{ $importedCount }} événement(s) ont été importés avec succès.
+                </flux:text>
+            </div>
+        </div>
+    </div>
+    @endif
+
     {{-- Zone d'upload --}}
     <div class="rounded-lg border border-zinc-200 bg-white p-8 dark:border-zinc-700 dark:bg-zinc-800">
         <flux:heading size="sm" class="mb-6 text-lg font-medium">
@@ -99,7 +201,11 @@ $resetForm = function () {
             <flux:icon.document-text class="mx-auto size-12 text-zinc-400" />
 
             <flux:heading size="sm" class="mt-4 text-base font-medium">
-                Glissez-déposez votre fichier PDF ici
+                @if ($file && is_object($file))
+                    Fichier sélectionné : {{ $file->getClientOriginalName() }}
+                @else
+                    Glissez-déposez votre fichier PDF ici
+                @endif
             </flux:heading>
 
             <flux:text class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
@@ -107,18 +213,42 @@ $resetForm = function () {
             </flux:text>
 
             <div class="mt-6">
-                <flux:button variant="primary" icon="arrow-up-tray">
-                    Choisir un fichier
-                </flux:button>
+                <input
+                    type="file"
+                    id="pdf-upload"
+                    wire:model="file"
+                    accept=".pdf"
+                    class="hidden"
+                />
+                <label for="pdf-upload" class="inline-block cursor-pointer">
+                    <span class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600">
+                        <svg class="size-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M9.25 13.25a.75.75 0 001.5 0V4.636l2.955 3.129a.75.75 0 001.09-1.03l-4.25-4.5a.75.75 0 00-1.09 0l-4.25 4.5a.75.75 0 101.09 1.03L9.25 4.636v8.614z" />
+                            <path d="M3.5 12.75a.75.75 0 00-1.5 0v2.5A2.75 2.75 0 004.75 18h10.5A2.75 2.75 0 0018 15.25v-2.5a.75.75 0 00-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5z" />
+                        </svg>
+                        Choisir un fichier
+                    </span>
+                </label>
             </div>
 
             <flux:text class="mt-4 text-xs text-zinc-500 dark:text-zinc-500">
                 Formats acceptés : .pdf • Taille max : 10 MB
             </flux:text>
-        </div>
 
-        {{-- TODO: Wire up file input --}}
-        {{-- <input type="file" wire:model="file" accept=".pdf" class="hidden" /> --}}
+            {{-- Loading indicator pour l'upload --}}
+            <div wire:loading wire:target="file" class="mt-4">
+                <flux:text class="text-sm text-blue-600 dark:text-blue-400">
+                    Chargement du fichier...
+                </flux:text>
+            </div>
+
+            {{-- Debug info --}}
+            @if ($file)
+                <div class="mt-4 text-xs text-green-600 dark:text-green-400">
+                    ✓ Fichier chargé: {{ $file->getClientOriginalName() }} ({{ number_format($file->getSize() / 1024, 2) }} KB)
+                </div>
+            @endif
+        </div>
     </div>
 
     {{-- Paramètres d'extraction --}}
@@ -197,48 +327,52 @@ $resetForm = function () {
         {{-- Une fois implémenté, afficher une miniature du PDF ici --}}
     </div>
 
-    {{-- Données extraites (placeholder) --}}
+    {{-- Données extraites --}}
     <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
         <div class="mb-4 flex items-center justify-between">
             <flux:heading size="sm" class="text-lg font-medium">
                 Données extraites
             </flux:heading>
-            <flux:badge color="zinc" size="sm">
-                0 cours détecté
+            <flux:badge color="{{ $extractedData ? 'blue' : 'zinc' }}" size="sm">
+                {{ $extractedData ? count($extractedData['events'] ?? []) : 0 }} cours détecté{{ $extractedData && count($extractedData['events'] ?? []) > 1 ? 's' : '' }}
             </flux:badge>
         </div>
 
-        {{-- État vide --}}
-        <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-8 text-center dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:icon.cpu-chip class="mx-auto size-12 text-zinc-400" />
-            <flux:text class="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
-                Les données extraites apparaîtront ici après le traitement du PDF.
-            </flux:text>
-            <flux:text class="mt-2 text-xs text-zinc-500 dark:text-zinc-500">
-                Vous pourrez les vérifier et les modifier avant l'importation finale
-            </flux:text>
-        </div>
-
-        {{-- Exemple de données extraites (commenté pour référence) --}}
-        {{--
-        <div class="space-y-2">
-            <div class="flex items-center justify-between rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
-                <div>
-                    <flux:text class="font-medium">Physique Quantique</flux:text>
-                    <flux:text class="text-sm text-zinc-600 dark:text-zinc-400">
-                        Mardi 28/11/2025 • 14:00 - 16:00 • Salle B203
-                    </flux:text>
-                    <flux:text class="text-xs text-zinc-500 dark:text-zinc-500">
-                        Prof. Martin • TD
-                    </flux:text>
+        @if ($extractedData && !empty($extractedData['events']))
+            {{-- Affichage des données extraites --}}
+            <div class="space-y-2 max-h-96 overflow-y-auto">
+                @foreach ($extractedData['events'] as $index => $event)
+                <div class="flex items-center justify-between rounded-lg border border-zinc-200 p-4 dark:border-zinc-700">
+                    <div>
+                        <flux:text class="font-medium">{{ $event['title'] ?? 'Cours sans titre' }}</flux:text>
+                        <flux:text class="text-sm text-zinc-600 dark:text-zinc-400">
+                            {{ \Carbon\Carbon::parse($event['start_time'])->format('l d/m/Y • H:i') }} -
+                            {{ \Carbon\Carbon::parse($event['end_time'])->format('H:i') }}
+                            @if (!empty($event['location']))
+                                • {{ $event['location'] }}
+                            @endif
+                        </flux:text>
+                        @if (!empty($event['teacher']))
+                        <flux:text class="text-xs text-zinc-500 dark:text-zinc-500">
+                            Prof. {{ $event['teacher'] }} • {{ ucfirst($event['type'] ?? 'course') }}
+                        </flux:text>
+                        @endif
+                    </div>
                 </div>
-                <div class="flex gap-2">
-                    <flux:button variant="ghost" size="sm" icon="pencil" />
-                    <flux:button variant="ghost" size="sm" icon="trash" />
-                </div>
+                @endforeach
             </div>
-        </div>
-        --}}
+        @else
+            {{-- État vide --}}
+            <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-8 text-center dark:border-zinc-700 dark:bg-zinc-900">
+                <flux:icon.cpu-chip class="mx-auto size-12 text-zinc-400" />
+                <flux:text class="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
+                    Les données extraites apparaîtront ici après le traitement du PDF.
+                </flux:text>
+                <flux:text class="mt-2 text-xs text-zinc-500 dark:text-zinc-500">
+                    Vous pourrez les vérifier et les modifier avant l'importation finale
+                </flux:text>
+            </div>
+        @endif
     </div>
 
     {{-- Statistiques d'extraction --}}
@@ -248,7 +382,7 @@ $resetForm = function () {
                 Cours détectés
             </flux:text>
             <flux:heading size="lg" class="mt-2 text-3xl font-bold text-blue-600 dark:text-blue-400">
-                0
+                {{ $extractedData ? count($extractedData['events'] ?? []) : 0 }}
             </flux:heading>
         </div>
 
@@ -302,15 +436,63 @@ $resetForm = function () {
 
     {{-- Actions --}}
     <div class="flex gap-3">
-        <flux:button variant="primary" icon="cpu-chip" disabled>
-            Lancer l'extraction
-        </flux:button>
-        <flux:button variant="outline" icon="arrow-down-tray" disabled>
-            Importer les données
-        </flux:button>
-        <flux:button variant="ghost" wire:click="resetForm">
-            Réinitialiser
-        </flux:button>
+        @if (!$file || $processing)
+            <flux:button
+                variant="primary"
+                icon="cpu-chip"
+                disabled
+            >
+                <span>Lancer l'extraction</span>
+            </flux:button>
+        @else
+            <flux:button
+                variant="primary"
+                icon="cpu-chip"
+                wire:click="processPDF"
+                wire:loading.attr="disabled"
+                wire:target="processPDF"
+            >
+                <span wire:loading.remove wire:target="processPDF">Lancer l'extraction</span>
+                <span wire:loading wire:target="processPDF">Traitement en cours...</span>
+            </flux:button>
+        @endif
+
+        @if (!$extractedData || $processing)
+            <flux:button
+                variant="outline"
+                icon="arrow-down-tray"
+                disabled
+            >
+                <span>Importer les données</span>
+            </flux:button>
+        @else
+            <flux:button
+                variant="outline"
+                icon="arrow-down-tray"
+                wire:click="confirmImport"
+                wire:loading.attr="disabled"
+                wire:target="confirmImport"
+            >
+                <span wire:loading.remove wire:target="confirmImport">Importer les données</span>
+                <span wire:loading wire:target="confirmImport">Importation...</span>
+            </flux:button>
+        @endif
+
+        @if ($processing)
+            <flux:button
+                variant="ghost"
+                disabled
+            >
+                Réinitialiser
+            </flux:button>
+        @else
+            <flux:button
+                variant="ghost"
+                wire:click="resetForm"
+            >
+                Réinitialiser
+            </flux:button>
+        @endif
     </div>
 </div>
 
