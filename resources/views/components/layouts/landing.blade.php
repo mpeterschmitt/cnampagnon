@@ -16,8 +16,8 @@
 
                     <nav class="flex items-center gap-4">
                         @auth
-                            <flux:button :href="route('dashboard')" variant="ghost" wire:navigate>
-                                {{ __('Dashboard') }}
+                            <flux:button :href="route('schedule.index')" variant="ghost" wire:navigate>
+                                {{ __('Schedule') }}
                             </flux:button>
                         @else
                             @if (Route::has('login'))

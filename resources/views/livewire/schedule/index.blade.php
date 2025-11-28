@@ -210,56 +210,56 @@ $createHomeworkAt = function ($date, $hour) {
     </div>
 
     {{-- Section des filtres --}}
-    <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
-        <div class="mb-4 flex items-center justify-between">
-            <flux:heading size="sm" class="text-lg font-medium">
-                Filtres
-            </flux:heading>
-            @if($selectedSubject || $selectedTeacher || $selectedCourseType)
-                <flux:button variant="ghost" size="sm" wire:click="clearFilters">
-                    Réinitialiser
-                </flux:button>
-            @endif
-        </div>
+{{--    <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">--}}
+{{--        <div class="mb-4 flex items-center justify-between">--}}
+{{--            <flux:heading size="sm" class="text-lg font-medium">--}}
+{{--                Filtres--}}
+{{--            </flux:heading>--}}
+{{--            @if($selectedSubject || $selectedTeacher || $selectedCourseType)--}}
+{{--                <flux:button variant="ghost" size="sm" wire:click="clearFilters">--}}
+{{--                    Réinitialiser--}}
+{{--                </flux:button>--}}
+{{--            @endif--}}
+{{--        </div>--}}
 
-        <div class="grid gap-4 sm:grid-cols-3">
-            {{-- Filtre par matière --}}
-            <div>
-                <flux:field>
-                    <flux:label>Matière</flux:label>
-                    <flux:select wire:model.live="selectedSubject" placeholder="Toutes les matières">
-                        @foreach($this->subjects as $subject)
-                            <option value="{{ $subject }}">{{ $subject }}</option>
-                        @endforeach
-                    </flux:select>
-                </flux:field>
-            </div>
+{{--        <div class="grid gap-4 sm:grid-cols-3">--}}
+{{--            --}}{{-- Filtre par matière --}}
+{{--            <div>--}}
+{{--                <flux:field>--}}
+{{--                    <flux:label>Matière</flux:label>--}}
+{{--                    <flux:select wire:model.live="selectedSubject" placeholder="Toutes les matières">--}}
+{{--                        @foreach($this->subjects as $subject)--}}
+{{--                            <option value="{{ $subject }}">{{ $subject }}</option>--}}
+{{--                        @endforeach--}}
+{{--                    </flux:select>--}}
+{{--                </flux:field>--}}
+{{--            </div>--}}
 
-            {{-- Filtre par enseignant --}}
-            <div>
-                <flux:field>
-                    <flux:label>Enseignant</flux:label>
-                    <flux:select wire:model.live="selectedTeacher" placeholder="Tous les enseignants">
-                        @foreach($this->teachers as $teacher)
-                            <option value="{{ $teacher }}">{{ $teacher }}</option>
-                        @endforeach
-                    </flux:select>
-                </flux:field>
-            </div>
+{{--            --}}{{-- Filtre par enseignant --}}
+{{--            <div>--}}
+{{--                <flux:field>--}}
+{{--                    <flux:label>Enseignant</flux:label>--}}
+{{--                    <flux:select wire:model.live="selectedTeacher" placeholder="Tous les enseignants">--}}
+{{--                        @foreach($this->teachers as $teacher)--}}
+{{--                            <option value="{{ $teacher }}">{{ $teacher }}</option>--}}
+{{--                        @endforeach--}}
+{{--                    </flux:select>--}}
+{{--                </flux:field>--}}
+{{--            </div>--}}
 
-            {{-- Filtre par type de cours --}}
-            <div>
-                <flux:field>
-                    <flux:label>Type de cours</flux:label>
-                    <flux:select wire:model.live="selectedCourseType" placeholder="Tous les types">
-                        <option value="CM">Cours Magistral (CM)</option>
-                        <option value="TD">Travaux Dirigés (TD)</option>
-                        <option value="TP">Travaux Pratiques (TP)</option>
-                    </flux:select>
-                </flux:field>
-            </div>
-        </div>
-    </div>
+{{--            --}}{{-- Filtre par type de cours --}}
+{{--            <div>--}}
+{{--                <flux:field>--}}
+{{--                    <flux:label>Type de cours</flux:label>--}}
+{{--                    <flux:select wire:model.live="selectedCourseType" placeholder="Tous les types">--}}
+{{--                        <option value="CM">Cours Magistral (CM)</option>--}}
+{{--                        <option value="TD">Travaux Dirigés (TD)</option>--}}
+{{--                        <option value="TP">Travaux Pratiques (TP)</option>--}}
+{{--                    </flux:select>--}}
+{{--                </flux:field>--}}
+{{--            </div>--}}
+{{--        </div>--}}
+{{--    </div>--}}
 
     {{-- Navigation de semaine --}}
     <div class="flex items-center justify-between rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
@@ -308,120 +308,213 @@ $createHomeworkAt = function ($date, $hour) {
         {{-- Grille horaire --}}
         <div class="overflow-x-auto">
             <div class="min-w-full">
-                <div class="grid grid-cols-6">
-                    {{-- Boucle sur les heures de 8h à 18h --}}
-                    @for($hour = 8; $hour <= 18; $hour++)
-                        {{-- Colonne des heures --}}
-                        <div class="border-r border-t border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900">
-                            <flux:text class="text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                                {{ sprintf('%02d:00', $hour) }}
-                            </flux:text>
-                        </div>
+                {{-- Conteneur avec position relative pour les événements absolus --}}
+                <div class="relative">
+                    {{-- Grille de fond avec les heures --}}
+                    <div class="grid grid-cols-6">
+                        @for($hour = 8; $hour <= 18; $hour++)
+                            {{-- Colonne des heures --}}
+                            <div class="border-r border-t border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900 h-20">
+                                <flux:text class="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                                    {{ sprintf('%02d:00', $hour) }}
+                                </flux:text>
+                            </div>
 
-                        {{-- Colonnes des jours --}}
-                        @foreach($this->weekDays as $day)
-                            @php
-                                // Récupérer les cours pour ce jour et cette heure
-                                $dayStart = $day->copy()->setTime($hour, 0, 0);
-                                $dayEnd = $day->copy()->setTime($hour, 59, 59);
-
-                                $coursesForSlot = $this->courses->filter(function($course) use ($dayStart, $dayEnd) {
-                                    return $course->start_time->between($dayStart, $dayEnd) ||
-                                           $course->end_time->between($dayStart, $dayEnd) ||
-                                           ($course->start_time->lessThan($dayStart) && $course->end_time->greaterThan($dayEnd));
-                                });
-
-                                // Récupérer les devoirs à rendre ce jour (affichés uniquement dans le premier créneau horaire)
-                                $homeworksForDay = $hour === 8 ? $this->homeworks->filter(function($homework) use ($day) {
-                                    return $homework->due_date->isSameDay($day);
-                                }) : collect();
-                            @endphp
-
-                            <div
-                                class="relative min-h-[60px] border-t border-zinc-200 p-2 dark:border-zinc-700 {{ $day->isToday() ? 'bg-zinc-50 dark:bg-zinc-900/50' : '' }} cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors group"
-                                wire:click="createHomeworkAt('{{ $day->format('Y-m-d') }}', {{ $hour }})"
-                                title="Cliquer pour ajouter un devoir à {{ $day->format('d/m') }} à {{ $hour }}h"
-                            >
-                                {{-- Indicateur visuel au survol --}}
-                                <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-0">
-                                    <svg class="size-8 text-blue-400 dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                    </svg>
+                            {{-- Colonnes des jours (cellules vides cliquables) --}}
+                            @foreach($this->weekDays as $dayIndex => $day)
+                                <div
+                                    class="relative border-t border-zinc-200 p-2 dark:border-zinc-700 {{ $day->isToday() ? 'bg-zinc-50 dark:bg-zinc-900/50' : '' }} cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors group h-20"
+                                    wire:click="createHomeworkAt('{{ $day->format('Y-m-d') }}', {{ $hour }})"
+                                    title="Cliquer pour ajouter un devoir à {{ $day->format('d/m') }} à {{ $hour }}h"
+                                >
+                                    {{-- Indicateur visuel au survol --}}
+                                    <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-0">
+                                        <svg class="size-8 text-blue-400 dark:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                                        </svg>
+                                    </div>
                                 </div>
+                            @endforeach
+                        @endfor
+                    </div>
 
-                                {{-- Afficher les cours --}}
-                                @foreach($coursesForSlot as $course)
-                                    @if($course->start_time->hour === $hour)
-                                        @php
-                                            $courseTypeColors = [
-                                                'CM' => 'bg-blue-100 border-blue-300 text-blue-900 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-200',
-                                                'TD' => 'bg-green-100 border-green-300 text-green-900 dark:bg-green-950 dark:border-green-800 dark:text-green-200',
-                                                'TP' => 'bg-purple-100 border-purple-300 text-purple-900 dark:bg-purple-950 dark:border-purple-800 dark:text-purple-200',
-                                            ];
-                                            $colorClass = $courseTypeColors[$course->course_type] ?? 'bg-zinc-100 border-zinc-300 text-zinc-900 dark:bg-zinc-950 dark:border-zinc-800 dark:text-zinc-200';
-                                        @endphp
+                    {{-- Overlay des événements avec position absolue --}}
+                    @foreach($this->weekDays as $dayIndex => $day)
+                        @php
+                            $dayStart = $day->copy()->setTime(8, 0, 0);
+                            $dayEnd = $day->copy()->setTime(18, 59, 59);
 
-                                        <div class="mb-1 rounded border {{ $colorClass }} p-2 text-xs relative z-10" wire:click.stop>
-                                            <div class="flex items-center justify-between">
-                                                <flux:text class="font-semibold">{{ $course->title }}</flux:text>
-                                                <flux:badge size="sm" color="zinc">{{ $course->course_type }}</flux:badge>
-                                            </div>
-                                            <flux:text class="mt-1 text-xs">
-                                                {{ $course->start_time->format('H:i') }} - {{ $course->end_time->format('H:i') }}
-                                            </flux:text>
-                                            @if($course->room)
-                                                <flux:text class="mt-0.5 text-xs opacity-75">
-                                                    📍 {{ $course->room }}
-                                                </flux:text>
-                                            @endif
-                                            @if($course->teacher)
-                                                <flux:text class="mt-0.5 text-xs opacity-75">
-                                                    👤 {{ $course->teacher }}
-                                                </flux:text>
-                                            @endif
-                                        </div>
-                                    @endif
-                                @endforeach
+                            // Récupérer tous les événements de ce jour
+                            $eventsForDay = $this->courses->filter(function($course) use ($day) {
+                                return $course->start_time->isSameDay($day);
+                            });
 
-                                {{-- Afficher les devoirs à rendre ce jour (dans le premier créneau uniquement) --}}
-                                @foreach($homeworksForDay as $homework)
+                            $homeworksForDay = $this->homeworks->filter(function($homework) use ($day) {
+                                return $homework->due_date->isSameDay($day);
+                            });
+
+                            // Combiner et trier par heure de début
+                            $allEvents = $eventsForDay->merge($homeworksForDay)->sortBy(function($event) {
+                                return $event->type === 'homework' ? $event->due_date : $event->start_time;
+                            })->values();
+
+                            // Calculer les chevauchements pour positionner les événements côte à côte
+                            $eventColumns = [];
+                            foreach($allEvents as $index => $event) {
+                                $eventStart = $event->type === 'homework' ? $event->due_date : $event->start_time;
+                                $eventEnd = $event->type === 'homework' ? $event->due_date->copy()->addMinutes(30) : $event->end_time;
+
+                                // Trouver la première colonne disponible
+                                $column = 0;
+                                foreach($eventColumns as $col => $colEvents) {
+                                    $hasOverlap = false;
+                                    foreach($colEvents as $existingEvent) {
+                                        $existingStart = $existingEvent['start'];
+                                        $existingEnd = $existingEvent['end'];
+
+                                        if ($eventStart < $existingEnd && $eventEnd > $existingStart) {
+                                            $hasOverlap = true;
+                                            break;
+                                        }
+                                    }
+
+                                    if (!$hasOverlap) {
+                                        break;
+                                    }
+                                    $column++;
+                                }
+
+                                if (!isset($eventColumns[$column])) {
+                                    $eventColumns[$column] = [];
+                                }
+
+                                $eventColumns[$column][] = [
+                                    'event' => $event,
+                                    'start' => $eventStart,
+                                    'end' => $eventEnd,
+                                    'column' => $column,
+                                    'totalColumns' => 1
+                                ];
+                            }
+
+                            // Mettre à jour le nombre total de colonnes pour chaque événement
+                            $maxColumns = count($eventColumns);
+                            foreach($eventColumns as $col => $colEvents) {
+                                foreach($colEvents as $idx => $eventData) {
+                                    $eventColumns[$col][$idx]['totalColumns'] = $maxColumns;
+                                }
+                            }
+                        @endphp
+
+                        {{-- Afficher les événements --}}
+                        @foreach($eventColumns as $column => $columnEvents)
+                            @foreach($columnEvents as $eventData)
+                                @php
+                                    $event = $eventData['event'];
+                                    $column = $eventData['column'];
+                                    $totalColumns = $eventData['totalColumns'];
+
+                                    $isHomework = $event->type === 'homework';
+                                    $eventStart = $isHomework ? $event->due_date : $event->start_time;
+                                    $eventEnd = $isHomework ? $event->due_date->copy()->addMinutes(30) : $event->end_time;
+
+                                    // Calculer la position et la hauteur
+                                    $startHour = $eventStart->hour + ($eventStart->minute / 60);
+                                    $endHour = $eventEnd->hour + ($eventEnd->minute / 60);
+                                    $topOffset = ($startHour - 8) * 80; // 80px par heure
+                                    $height = ($endHour - $startHour) * 80;
+
+                                    // Calculer la largeur et le décalage horizontal
+                                    // La grille a 6 colonnes : 1 pour les heures (16.666%) + 5 pour les jours (83.333%)
+                                    // Chaque jour occupe donc 83.333% / 5 = 16.666% de la largeur totale
+                                    $hoursColumnWidth = 100 / 6; // 16.666%
+                                    $daysAreaWidth = 100 - $hoursColumnWidth; // 83.333%
+                                    $dayWidth = $daysAreaWidth / 5; // 16.666% par jour
+
+                                    // Si plusieurs événements simultanés, diviser la largeur du jour
+                                    $eventWidth = $dayWidth / $totalColumns;
+
+                                    // Position : colonne des heures + décalage du jour + décalage de la colonne de l'événement
+                                    $leftOffset = $hoursColumnWidth + ($dayIndex * $dayWidth) + ($column * $eventWidth);
+                                @endphp
+
+                                @if($isHomework)
                                     @php
                                         $priorityColors = [
                                             'high' => 'bg-red-100 border-red-400 text-red-900 dark:bg-red-950 dark:border-red-700 dark:text-red-200',
                                             'medium' => 'bg-yellow-100 border-yellow-400 text-yellow-900 dark:bg-yellow-950 dark:border-yellow-700 dark:text-yellow-200',
                                             'low' => 'bg-zinc-100 border-zinc-400 text-zinc-900 dark:bg-zinc-950 dark:border-zinc-700 dark:text-zinc-200',
                                         ];
-                                        $homeworkColorClass = $priorityColors[$homework->priority] ?? $priorityColors['low'];
-                                        $isOverdue = $homework->due_date < now() && !$homework->completed;
+                                        $colorClass = $priorityColors[$event->priority] ?? $priorityColors['low'];
+                                        $isOverdue = $event->due_date < now() && !$event->completed;
                                     @endphp
 
-                                    <a href="{{ route('homeworks.edit', $homework) }}" class="mb-1 block rounded border {{ $homeworkColorClass }} p-2 text-xs hover:opacity-80 transition-opacity relative z-10" wire:navigate wire:click.stop>
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex items-center gap-1">
-                                                <flux:text class="font-semibold">📝 {{ $homework->title }}</flux:text>
-                                                @if($homework->completed)
-                                                    <span class="text-green-600 dark:text-green-400">✓</span>
+                                    <a
+                                        href="{{ route('homeworks.edit', $event) }}"
+                                        class="absolute rounded border {{ $colorClass }} p-2 text-xs hover:opacity-80 transition-opacity z-10 overflow-hidden"
+                                        style="top: {{ $topOffset }}px; left: {{ $leftOffset }}%; width: {{ $eventWidth }}%; height: {{ $height }}px; min-height: 40px;"
+                                        wire:navigate
+                                        wire:click.stop
+                                    >
+                                        <div class="flex flex-col h-full">
+                                            <div class="flex items-center justify-between gap-1">
+                                                <flux:text class="font-semibold text-xs truncate">📝 {{ $event->title }}</flux:text>
+                                                @if($event->completed)
+                                                    <span class="text-green-600 dark:text-green-400 text-sm">✓</span>
                                                 @endif
                                             </div>
-                                            @if($isOverdue)
-                                                <flux:badge size="sm" color="red">Retard</flux:badge>
-                                            @else
-                                                <flux:badge size="sm" color="zinc">Devoir</flux:badge>
+                                            <flux:text class="mt-1 text-xs">
+                                                {{ $event->due_date->format('H:i') }}
+                                            </flux:text>
+                                            @if($event->subject && $height > 60)
+                                                <flux:text class="mt-0.5 text-xs opacity-75 truncate">
+                                                    📚 {{ $event->subject }}
+                                                </flux:text>
+                                            @endif
+                                            @if($isOverdue && $height > 80)
+                                                <flux:badge size="sm" color="red" class="mt-1">Retard</flux:badge>
                                             @endif
                                         </div>
-                                        <flux:text class="mt-1 text-xs">
-                                            À rendre : {{ $homework->due_date->format('H:i') }}
-                                        </flux:text>
-                                        @if($homework->subject)
-                                            <flux:text class="mt-0.5 text-xs opacity-75">
-                                                📚 {{ $homework->subject }}
-                                            </flux:text>
-                                        @endif
                                     </a>
-                                @endforeach
-                            </div>
+                                @else
+                                    @php
+                                        $courseTypeColors = [
+                                            'CM' => 'bg-blue-100 border-blue-300 text-blue-900 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-200',
+                                            'TD' => 'bg-green-100 border-green-300 text-green-900 dark:bg-green-950 dark:border-green-800 dark:text-green-200',
+                                            'TP' => 'bg-purple-100 border-purple-300 text-purple-900 dark:bg-purple-950 dark:border-purple-800 dark:text-purple-200',
+                                        ];
+                                        $colorClass = $courseTypeColors[$event->course_type] ?? 'bg-zinc-100 border-zinc-300 text-zinc-900 dark:bg-zinc-950 dark:border-zinc-800 dark:text-zinc-200';
+                                    @endphp
+
+                                    <div
+                                        class="absolute rounded border {{ $colorClass }} p-2 text-xs z-10 overflow-hidden"
+                                        style="top: {{ $topOffset }}px; left: {{ $leftOffset }}%; width: {{ $eventWidth }}%; height: {{ $height }}px; min-height: 40px;"
+                                        wire:click.stop
+                                    >
+                                        <div class="flex flex-col h-full">
+                                            <div class="flex items-center justify-between gap-1">
+                                                <flux:text class="font-semibold text-xs truncate">{{ $event->title }}</flux:text>
+                                                <flux:badge size="sm" color="zinc" class="shrink-0">{{ $event->course_type }}</flux:badge>
+                                            </div>
+                                            <flux:text class="mt-1 text-xs">
+                                                {{ $event->start_time->format('H:i') }} - {{ $event->end_time->format('H:i') }}
+                                            </flux:text>
+                                            @if($event->room && $height > 60)
+                                                <flux:text class="mt-0.5 text-xs opacity-75 truncate">
+                                                    📍 {{ $event->room }}
+                                                </flux:text>
+                                            @endif
+                                            @if($event->teacher && $height > 80)
+                                                <flux:text class="mt-0.5 text-xs opacity-75 truncate">
+                                                    👤 {{ $event->teacher }}
+                                                </flux:text>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endif
+                            @endforeach
                         @endforeach
-                    @endfor
+                    @endforeach
                 </div>
             </div>
         </div>
