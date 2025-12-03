@@ -59,6 +59,10 @@ RUN npm ci
 COPY vite.config.js ./
 COPY resources ./resources
 COPY public ./public
+ARG ASSET_URL
+ARG APP_URL
+ENV ASSET_URL=$ASSET_URL
+ENV APP_URL=$APP_URL
 
 # Build assets (creates public/build)
 RUN npm run build
