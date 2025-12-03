@@ -13,7 +13,7 @@
         "johngrogg/ics-parser": "^3.5",
         "laravel/fortify": "^1.30",
         "laravel/framework": "^12.0",
-        "laravel/octane": "*",
+        "laravel/octane": "^2.13",
         "laravel/telescope": "^5.15",
         "laravel/tinker": "^2.10.1",
         "livewire/flux": "^2.1.1",

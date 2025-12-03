@@ -1,27 +1,39 @@
 services:
-    laravel.test:
-        build:
-            context: ./docker/8.4
-            dockerfile: Dockerfile
-            args:
-                WWWGROUP: '${WWWGROUP:-1000}'
-        image: ghcr.io/clesecq/cnampagnon/sail:latest
-        extra_hosts:
-            - 'host.docker.internal:host-gateway'
-        ports:
-            - '${APP_PORT:-80}:8000'
-            - '${VITE_PORT:-5173}:${VITE_PORT:-5173}'
-        environment:
-            WWWUSER: '${WWWUSER:-1000}'
-            LARAVEL_SAIL: 1
-            XDEBUG_MODE: '${SAIL_XDEBUG_MODE:-off}'
-            XDEBUG_CONFIG: '${SAIL_XDEBUG_CONFIG:-client_host=host.docker.internal}'
-            IGNITION_LOCAL_SITES_PATH: '${PWD}'
-        volumes:
-            - '.:/var/www/html'
-        networks:
-            - sail
-        depends_on: {  }
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cnampagnon:latest
+    ports:
+      - '${APP_PORT:-8000}:8000'
+    environment:
+      - APP_ENV=${APP_ENV:-local}
+      - APP_KEY=${APP_KEY}
+      - DB_CONNECTION=sqlite
+      - DB_DATABASE=/app/db/database.sqlite
+      - OCTANE_SERVER=frankenphp
+    volumes:
+      - database:/app/db
+      - storage-docker:/app/storage
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - cnampagnon
+
+#    entrypoint: ['sh -c "php artisan migrate --force && php artisan octane:frankenphp --host=0.0.0.0 --port=8000 --log-level=error"']
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/up"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    tty: true
+
 networks:
-    sail:
-        driver: bridge
+  cnampagnon:
+    driver: bridge
+volumes:
+    caddy_data:
+    caddy_config:
+    storage-docker:
+    database:
