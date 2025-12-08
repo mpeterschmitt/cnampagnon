@@ -15,14 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             "admin" => EnsureUserIsAdmin::class,
         ]);
-        $middleware->trustProxies(
-            at: '*',
-            headers:
-                Request::HEADER_X_FORWARDED_FOR |
-                Request::HEADER_X_FORWARDED_HOST |
-                Request::HEADER_X_FORWARDED_PORT |
-                Request::HEADER_X_FORWARDED_PROTO
-        );
+        $middleware->trustProxies(at: '*');
     })
     ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule): void {
         // Envoyer les rappels de devoirs chaque jour à 9h du matin
