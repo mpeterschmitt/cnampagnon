@@ -3,7 +3,7 @@
     <head>
         @include('partials.head')
     </head>
-    <body class="min-h-screen bg-white dark:bg-zinc-900 antialiased">
+    <body class="min-h-screen bg-white dark:bg-zinc-900 antialiased flex-col">
         <!-- Header -->
         <header class="border-b border-zinc-200 dark:border-zinc-700">
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -38,7 +38,7 @@
         </header>
 
         <!-- Main Content -->
-        <main>
+        <main class="grow">
             {{ $slot }}
         </main>
 

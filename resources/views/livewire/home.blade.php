@@ -42,6 +42,16 @@ state(['sharepointUrl' => 'https://cfaiformation-my.sharepoint.com/:f:/g/persona
                         Accéder à SharePoint
                     </flux:button>
 
+                    @auth
+                        <flux:button
+                            variant="outline"
+                            :href="route('schedule.index')"
+                            wire:navigate
+                        >
+                            Voir mon emploi du temps
+                        </flux:button>
+                    @endauth
+
                     @guest
                         <flux:button
                             variant="outline"
@@ -51,59 +61,6 @@ state(['sharepointUrl' => 'https://cfaiformation-my.sharepoint.com/:f:/g/persona
                             S'inscrire
                         </flux:button>
                     @endguest
-                </div>
-            </div>
-        </div>
-
-        <!-- Features Section -->
-        <div class="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-            <div class="mx-auto max-w-2xl text-center mb-12">
-                <flux:heading size="lg" class="mb-4 text-3xl font-semibold">
-                    Fonctionnalités à venir
-                </flux:heading>
-                <flux:text class="text-zinc-600 dark:text-zinc-400">
-                    La plateforme évoluera pour répondre aux besoins de la promotion
-                </flux:text>
-            </div>
-
-            <div class="grid gap-8 md:grid-cols-3">
-                <!-- Feature 1 -->
-                <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
-                    <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-700">
-                        <flux:icon.users class="size-6" />
-                    </div>
-                    <flux:heading size="sm" class="mb-2 text-xl font-semibold">
-                        Réseau
-                    </flux:heading>
-                    <flux:text class="text-zinc-600 dark:text-zinc-400">
-                        Restez en contact avec vos camarades et partagez vos expériences professionnelles.
-                    </flux:text>
-                </div>
-
-                <!-- Feature 2 -->
-                <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
-                    <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-700">
-                        <flux:icon.folder class="size-6" />
-                    </div>
-                    <flux:heading size="sm" class="mb-2 text-xl font-semibold">
-                        Ressources
-                    </flux:heading>
-                    <flux:text class="text-zinc-600 dark:text-zinc-400">
-                        Accédez aux documents, projets et ressources partagées de la promotion.
-                    </flux:text>
-                </div>
-
-                <!-- Feature 3 -->
-                <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
-                    <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-zinc-100 dark:bg-zinc-700">
-                        <flux:icon.calendar class="size-6" />
-                    </div>
-                    <flux:heading size="sm" class="mb-2 text-xl font-semibold">
-                        Événements
-                    </flux:heading>
-                    <flux:text class="text-zinc-600 dark:text-zinc-400">
-                        Soyez informé des événements, rencontres et opportunités de networking.
-                    </flux:text>
                 </div>
             </div>
         </div>

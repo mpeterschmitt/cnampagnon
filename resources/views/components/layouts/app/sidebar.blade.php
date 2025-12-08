@@ -15,6 +15,7 @@
                 <flux:navlist.group :heading="__('Platform')" class="grid">
                     <flux:navlist.item icon="calendar" :href="route('schedule.index')" :current="request()->routeIs('schedule.*')" wire:navigate>{{ __('Emploi du Temps') }}</flux:navlist.item>
                     <flux:navlist.item icon="document-text" :href="route('homeworks.index')" :current="request()->routeIs('homeworks.*')" wire:navigate>{{ __('Devoirs') }}</flux:navlist.item>
+                    <flux:navlist.item icon="folder-open" :href="'https://cfaiformation-my.sharepoint.com/:f:/g/personal/mpeterschmitt1_cfai-formation_fr/IgCQi66vpvSuQYqwjkeLu-y6AQrTZlwBRuAxePu5FaaKPb0?e=P1wHXG'" target="_blank">{{ __('SharePoint') }}</flux:navlist.item>
                 </flux:navlist.group>
 
                 @if(auth()->user()->isAdmin())
@@ -29,7 +30,7 @@
             <flux:spacer />
 
             <flux:navlist variant="outline">
-                <flux:navlist.item icon="folder-git-2" href="https://github.com/clesecq/cnampagnon" target="_blank">
+                <flux:navlist.item icon="folder-git-2" href="https://github.com/mpeterschmitt/cnampagnon" target="_blank">
                 {{ __('Repository') }}
                 </flux:navlist.item>
             </flux:navlist>
