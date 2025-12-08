@@ -17,7 +17,7 @@
                 required
                 autofocus
                 autocomplete="email"
-                placeholder="email@example.com"
+                placeholder="email@cfai-formation.fr"
             />
 
             <!-- Password -->

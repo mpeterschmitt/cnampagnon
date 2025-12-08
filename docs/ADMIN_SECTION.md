@@ -317,7 +317,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
 ## FAQ
 
 **Q: Comment accéder à la section admin ?**
-R: Il faut être connecté et avoir le statut admin. Utilisez `php artisan user:make-admin email@example.com` pour créer un admin.
+R: Il faut être connecté et avoir le statut admin. Utilisez `php artisan user:make-admin email@cfai-formation.fr` pour créer un admin.
 
 **Q: Les pages admin sont vides, est-ce normal ?**
 R: Oui, actuellement seule l'UI est implémentée. La logique (connexion DB, imports, etc.) reste à développer.
