@@ -83,7 +83,7 @@ $confirmImport = function () {
     try {
         // Si on doit remplacer l'emploi du temps existant, supprimer tous les cours
         if ($this->replaceExisting) {
-            Event::where('type', 'course')->delete();
+            Event::where('type', 'course')->orWhere('type', 'exam')->delete();
         }
 
         foreach ($this->extractedData['events'] as $eventData) {

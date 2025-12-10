@@ -259,6 +259,7 @@ class IcsImportService
             if ($replaceExisting) {
                 Event::query()
                     ->where('source', 'ics_import')
+                    ->orWhere('source', 'pdf_import')
                     ->delete();
             }
 
