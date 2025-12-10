@@ -320,16 +320,43 @@ $createHomeworkAt = function ($date, $hour) {
 
                             // Calculer les chevauchements pour positionner les événements côte à côte
                             $eventColumns = [];
+                            $processedEvents = [];
+
                             foreach($allEvents as $index => $event) {
                                 $eventStart = $event->type === 'homework' ? $event->due_date : $event->start_time;
                                 $eventEnd = $event->type === 'homework' ? $event->due_date->copy()->addMinutes(30) : $event->end_time;
 
-                                // Trouver la première colonne disponible
                                 // Pour les devoirs après 18h, les afficher en bas du créneau 18h
                                 if ($event->type === 'homework' && $eventStart->hour >= 18) {
                                     $eventStart = $eventStart->copy()->setTime(18, 30, 0);
                                     $eventEnd = $eventStart->copy()->addMinutes(30);
                                 }
+
+                                // Trouver tous les événements qui se chevauchent avec celui-ci
+                                $overlappingEvents = [];
+                                foreach($allEvents as $otherIndex => $otherEvent) {
+                                    if ($index === $otherIndex) {
+                                        continue;
+                                    }
+
+                                    $otherStart = $otherEvent->type === 'homework' ? $otherEvent->due_date : $otherEvent->start_time;
+                                    $otherEnd = $otherEvent->type === 'homework' ? $otherEvent->due_date->copy()->addMinutes(30) : $otherEvent->end_time;
+
+                                    // Appliquer la même règle pour les devoirs après 18h
+                                    if ($otherEvent->type === 'homework' && $otherStart->hour >= 18) {
+                                        $otherStart = $otherStart->copy()->setTime(18, 30, 0);
+                                        $otherEnd = $otherStart->copy()->addMinutes(30);
+                                    }
+
+                                    if ($eventStart < $otherEnd && $eventEnd > $otherStart) {
+                                        $overlappingEvents[] = $otherIndex;
+                                    }
+                                }
+
+                                // Calculer le nombre total de colonnes nécessaires pour ce groupe d'événements
+                                $totalColumns = count($overlappingEvents) + 1;
+
+                                // Trouver la première colonne disponible parmi les événements qui se chevauchent
                                 $column = 0;
                                 foreach($eventColumns as $col => $colEvents) {
                                     $hasOverlap = false;
@@ -358,16 +385,14 @@ $createHomeworkAt = function ($date, $hour) {
                                     'start' => $eventStart,
                                     'end' => $eventEnd,
                                     'column' => $column,
-                                    'totalColumns' => 1
+                                    'totalColumns' => $totalColumns
                                 ];
-                            }
 
-                            // Mettre à jour le nombre total de colonnes pour chaque événement
-                            $maxColumns = count($eventColumns);
-                            foreach($eventColumns as $col => $colEvents) {
-                                foreach($colEvents as $idx => $eventData) {
-                                    $eventColumns[$col][$idx]['totalColumns'] = $maxColumns;
-                                }
+                                $processedEvents[$index] = [
+                                    'start' => $eventStart,
+                                    'end' => $eventEnd,
+                                    'totalColumns' => $totalColumns,
+                                ];
                             }
                         @endphp
 
