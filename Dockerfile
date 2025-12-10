@@ -126,7 +126,9 @@ COPY --from=composer_builder /usr/bin/composer /usr/bin/composer
 COPY --from=node_builder --chown=laravel:laravel /app/public/build ./public/build
 # 3. Copy Python Virtual Environment
 COPY --from=python_builder --chown=laravel:laravel /app/.venv ./.venv
-# 4. Copy Application Code
+# 4. Copy uv binary
+COPY --from=python_builder /bin/uv /bin/uv
+# 5. Copy Application Code
 COPY --chown=laravel:laravel . .
 
 # Final Directory Permissions
