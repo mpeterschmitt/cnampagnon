@@ -215,58 +215,6 @@ $createHomeworkAt = function ($date, $hour) {
         </div>
     </div>
 
-    {{-- Section des filtres --}}
-    {{--    <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">--}}
-    {{--        <div class="mb-4 flex items-center justify-between">--}}
-    {{--            <flux:heading size="sm" class="text-lg font-medium">--}}
-    {{--                Filtres--}}
-    {{--            </flux:heading>--}}
-    {{--            @if($selectedSubject || $selectedTeacher || $selectedCourseType)--}}
-    {{--                <flux:button variant="ghost" size="sm" wire:click="clearFilters">--}}
-    {{--                    Réinitialiser--}}
-    {{--                </flux:button>--}}
-    {{--            @endif--}}
-    {{--        </div>--}}
-
-    {{--        <div class="grid gap-4 sm:grid-cols-3">--}}
-    {{--            --}}{{-- Filtre par matière --}}
-    {{--            <div>--}}
-    {{--                <flux:field>--}}
-    {{--                    <flux:label>Matière</flux:label>--}}
-    {{--                    <flux:select wire:model.live="selectedSubject" placeholder="Toutes les matières">--}}
-    {{--                        @foreach($this->subjects as $subject)--}}
-    {{--                            <option value="{{ $subject }}">{{ $subject }}</option>--}}
-    {{--                        @endforeach--}}
-    {{--                    </flux:select>--}}
-    {{--                </flux:field>--}}
-    {{--            </div>--}}
-
-    {{--            --}}{{-- Filtre par enseignant --}}
-    {{--            <div>--}}
-    {{--                <flux:field>--}}
-    {{--                    <flux:label>Enseignant</flux:label>--}}
-    {{--                    <flux:select wire:model.live="selectedTeacher" placeholder="Tous les enseignants">--}}
-    {{--                        @foreach($this->teachers as $teacher)--}}
-    {{--                            <option value="{{ $teacher }}">{{ $teacher }}</option>--}}
-    {{--                        @endforeach--}}
-    {{--                    </flux:select>--}}
-    {{--                </flux:field>--}}
-    {{--            </div>--}}
-
-    {{--            --}}{{-- Filtre par type de cours --}}
-    {{--            <div>--}}
-    {{--                <flux:field>--}}
-    {{--                    <flux:label>Type de cours</flux:label>--}}
-    {{--                    <flux:select wire:model.live="selectedCourseType" placeholder="Tous les types">--}}
-    {{--                        <option value="CM">Cours Magistral (CM)</option>--}}
-    {{--                        <option value="TD">Travaux Dirigés (TD)</option>--}}
-    {{--                        <option value="TP">Travaux Pratiques (TP)</option>--}}
-    {{--                    </flux:select>--}}
-    {{--                </flux:field>--}}
-    {{--            </div>--}}
-    {{--        </div>--}}
-    {{--    </div>--}}
-
     {{-- Navigation de semaine --}}
     <div
         class="flex items-center justify-between rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
@@ -377,6 +325,11 @@ $createHomeworkAt = function ($date, $hour) {
                                 $eventEnd = $event->type === 'homework' ? $event->due_date->copy()->addMinutes(30) : $event->end_time;
 
                                 // Trouver la première colonne disponible
+                                // Pour les devoirs après 18h, les afficher en bas du créneau 18h
+                                if ($event->type === 'homework' && $eventStart->hour >= 18) {
+                                    $eventStart = $eventStart->copy()->setTime(18, 30, 0);
+                                    $eventEnd = $eventStart->copy()->addMinutes(30);
+                                }
                                 $column = 0;
                                 foreach($eventColumns as $col => $colEvents) {
                                     $hasOverlap = false;
@@ -429,6 +382,12 @@ $createHomeworkAt = function ($date, $hour) {
                                     $isHomework = $event->type === 'homework';
                                     $eventStart = $isHomework ? $event->due_date : $event->start_time;
                                     $eventEnd = $isHomework ? $event->due_date->copy()->addMinutes(30) : $event->end_time;
+
+                                    // Pour les devoirs après 18h, les afficher en bas du créneau 18h
+                                    if ($isHomework && $eventStart->hour >= 18) {
+                                        $eventStart = $eventStart->copy()->setTime(18, 30, 0);
+                                        $eventEnd = $eventStart->copy()->addMinutes(30);
+                                    }
 
                                     // Calculer la position et la hauteur
                                     $startHour = $eventStart->hour + ($eventStart->minute / 60);
