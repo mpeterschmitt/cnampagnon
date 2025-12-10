@@ -71,6 +71,21 @@ $homeworks = computed(function () {
 });
 
 /**
+ * Computed property pour obtenir les examens de la semaine
+ */
+$exams = computed(function () {
+    $startOfWeek = $this->selectedWeek->copy()->startOfWeek();
+    $endOfWeek = $this->selectedWeek->copy()->endOfWeek();
+
+    return \App\Models\Event::query()
+        ->exams()
+        ->betweenDates($startOfWeek, $endOfWeek)
+        ->forSubject($this->selectedSubject)
+        ->orderBy('start_time')
+        ->get();
+});
+
+/**
  * Computed property pour obtenir les matières disponibles
  */
 $subjects = computed(function () {
@@ -313,8 +328,12 @@ $createHomeworkAt = function ($date, $hour) {
                                 return $homework->due_date->isSameDay($day);
                             });
 
+                            $examsForDay = $this->exams->filter(function($exam) use ($day) {
+                                return $exam->start_time->isSameDay($day);
+                            });
+
                             // Combiner et trier par heure de début
-                            $allEvents = $eventsForDay->merge($homeworksForDay)->sortBy(function($event) {
+                            $allEvents = $eventsForDay->merge($homeworksForDay)->merge($examsForDay)->sortBy(function($event) {
                                 return $event->type === 'homework' ? $event->due_date : $event->start_time;
                             })->values();
 
@@ -473,6 +492,34 @@ $createHomeworkAt = function ($date, $hour) {
                                             @endif
                                         </div>
                                     </a>
+                                @elseif($event->type === 'exam')
+                                    <div
+                                        class="absolute rounded border bg-orange-100 border-orange-400 text-orange-900 dark:bg-orange-950 dark:border-orange-700 dark:text-orange-200 p-2 text-xs z-10 overflow-hidden"
+                                        style="top: {{ $topOffset }}px; left: {{ $leftOffset }}%; width: {{ $eventWidth }}%; height: {{ $height }}px; min-height: 40px;"
+                                        wire:click.stop
+                                    >
+                                        <div class="flex flex-col h-full">
+                                            <div class="flex items-center justify-between gap-1">
+                                                <flux:text class="font-semibold text-xs truncate">
+                                                    📋 {{ $event->title }}</flux:text>
+                                                <flux:badge size="sm" color="orange" class="shrink-0">EXAMEN</flux:badge>
+                                            </div>
+                                            <flux:text class="mt-1 text-xs">
+                                                {{ $event->start_time->format('H:i') }}
+                                                - {{ $event->end_time->format('H:i') }}
+                                            </flux:text>
+                                            @if($event->room && $height > 60)
+                                                <flux:text class="mt-0.5 text-xs opacity-75 truncate">
+                                                    📍 {{ $event->room }}
+                                                </flux:text>
+                                            @endif
+                                            @if($event->subject && $height > 80)
+                                                <flux:text class="mt-0.5 text-xs opacity-75 truncate">
+                                                    📚 {{ $event->subject }}
+                                                </flux:text>
+                                            @endif
+                                        </div>
+                                    </div>
                                 @else
                                     @php
                                         $courseTypeColors = [
@@ -602,6 +649,79 @@ $createHomeworkAt = function ($date, $hour) {
         </div>
     @endif
 
+    {{-- Section des examens de la semaine --}}
+    @if($this->exams->count() > 0)
+        <div class="rounded-lg border border-orange-200 bg-white p-6 dark:border-orange-700 dark:bg-zinc-800">
+            <div class="mb-4 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <svg class="size-6 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
+                    </svg>
+                    <flux:heading size="sm" class="text-lg font-medium">
+                        Examens de la semaine
+                    </flux:heading>
+                </div>
+            </div>
+
+            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach($this->exams as $exam)
+                    <div
+                        class="block rounded-lg border border-orange-300 bg-orange-50 dark:border-orange-700 dark:bg-orange-950/30 p-4 transition-colors hover:border-orange-400 dark:hover:border-orange-600">
+                        <div class="flex items-start justify-between gap-2 mb-2">
+                            <flux:text class="font-semibold text-sm text-orange-900 dark:text-orange-100">
+                                📋 {{ $exam->title }}
+                            </flux:text>
+                            <flux:badge size="sm" color="orange" class="shrink-0">EXAMEN</flux:badge>
+                        </div>
+
+                        <div class="space-y-1 text-xs text-orange-700 dark:text-orange-300">
+                            <div class="flex items-center gap-1">
+                                <svg class="size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                                <span>{{ $exam->start_time->format('D d/m à H:i') }}</span>
+                            </div>
+
+                            @if($exam->end_time)
+                                <div class="flex items-center gap-1">
+                                    <svg class="size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <span>Durée: {{ $exam->start_time->diffInMinutes($exam->end_time) }} min</span>
+                                </div>
+                            @endif
+
+                            @if($exam->room)
+                                <div class="flex items-center gap-1">
+                                    <svg class="size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    </svg>
+                                    <span>{{ $exam->room }}</span>
+                                </div>
+                            @endif
+
+                            @if($exam->subject)
+                                <div class="flex items-center gap-1">
+                                    <svg class="size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                                    </svg>
+                                    <span>{{ $exam->subject }}</span>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
     {{-- Section des changements de dernière minute --}}
     <div class="rounded-lg border border-orange-200 bg-orange-50 p-6 dark:border-orange-800 dark:bg-orange-950/30">
         <div class="mb-4 flex items-start gap-3">
@@ -656,6 +776,31 @@ $createHomeworkAt = function ($date, $hour) {
                         <div class="h-3 w-3 rounded-full bg-purple-500"></div>
                         <flux:text class="text-sm">Travaux Pratiques (TP)</flux:text>
                     </div>
+                    <div class="flex items-center gap-2">
+                        <div class="h-3 w-3 rounded-full bg-orange-500"></div>
+                        <flux:text class="text-sm">Examen</flux:text>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Devoirs --}}
+            <div>
+                <flux:text class="mb-2 text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                    Devoirs
+                </flux:text>
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2">
+                        <div class="h-3 w-3 rounded-full bg-red-500"></div>
+                        <flux:text class="text-sm">Priorité élevée</flux:text>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="h-3 w-3 rounded-full bg-yellow-500"></div>
+                        <flux:text class="text-sm">Priorité moyenne</flux:text>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="h-3 w-3 rounded-full bg-zinc-400"></div>
+                        <flux:text class="text-sm">Priorité faible</flux:text>
+                    </div>
                 </div>
             </div>
 
@@ -679,6 +824,7 @@ $createHomeworkAt = function ($date, $hour) {
                     </div>
                 </div>
             </div>
+        </div>
 
             {{-- Actions disponibles (pour plus tard) --}}
             <div>
