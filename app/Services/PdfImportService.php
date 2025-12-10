@@ -32,7 +32,7 @@ class PdfImportService
 
         try {
 
-            $result = Process::run(['uv', 'python', $scriptPath, '--output', $outputFilePath, $filePath]);
+            $result = Process::run(['uv', 'run', $scriptPath, '--output', $outputFilePath, $filePath]);
 
             if ($result->failed()) {
                 throw new \Exception('Python Error: '.$result->errorOutput());
