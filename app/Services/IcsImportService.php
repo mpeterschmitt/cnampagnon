@@ -127,7 +127,7 @@ class IcsImportService
                 'subject' => $sanitizeUtf8($parsedInfo['subject'] ?? null),
                 'teacher' => $sanitizeUtf8($teacherFromDescription ?? $parsedInfo['teacher'] ?? null),
                 'course_type' => $sanitizeUtf8($parsedInfo['course_type'] ?? null),
-                'room' => "ITII",
+                'room' => 'ITII',
                 'external_id' => $sanitizeUtf8($uid),
                 'type' => $this->determineEventType($title, $description),
             ];
@@ -255,11 +255,24 @@ class IcsImportService
         DB::beginTransaction();
 
         try {
-            // Supprimer les événements existants si demandé
+            // Supprimer les évenements existants dans l'interval de temps min-max
             if ($replaceExisting) {
+                // Convert array to Collection to use Collection methods
+                $eventsCollection = collect($events);
+
+                $min = $eventsCollection->min(function ($event) {
+                    return Carbon::parse($event['start_time']);
+                });
+                $max = $eventsCollection->max(function ($event) {
+                    return Carbon::parse($event['end_time']);
+                });
+
                 Event::query()
-                    ->where('source', 'ics_import')
-                    ->orWhere('source', 'pdf_import')
+                    ->whereNot('source', 'manual')
+                    ->where(function ($query) use ($min, $max) {
+                        $query->whereBetween('start_time', [$min, $max])
+                            ->orWhereBetween('end_time', [$min, $max]);
+                    })
                     ->delete();
             }
 
