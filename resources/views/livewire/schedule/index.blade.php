@@ -1,6 +1,7 @@
 <?php
 
 use Carbon\Carbon;
+
 use function Livewire\Volt\computed;
 use function Livewire\Volt\layout;
 use function Livewire\Volt\state;
@@ -17,10 +18,11 @@ layout('components.layouts.app');
 // État du composant
 state([
     'selectedWeek' => now()->startOfWeek(),  // Semaine actuellement affichée
+    'selectedMonth' => now()->startOfMonth(), // Mois actuellement affiché
     'selectedSubject' => null,                // Filtre: matière sélectionnée
     'selectedTeacher' => null,                // Filtre: enseignant sélectionné
     'selectedCourseType' => null,             // Filtre: type de cours (CM, TD, TP)
-    'viewMode' => 'week',                     // Mode d'affichage: 'week' ou 'day'
+    'viewMode' => 'week',                     // Mode d'affichage: 'week', 'month', ou 'day'
 ]);
 
 /**
@@ -33,6 +35,39 @@ $weekDays = computed(function () {
 
     for ($i = 0; $i < 5; $i++) { // Lundi à Vendredi
         $days[] = $start->copy()->addDays($i);
+    }
+
+    return $days;
+});
+
+/**
+ * Computed property pour obtenir les jours du mois affiché
+ * Format: Array de Carbon instances pour chaque jour du mois (avec padding)
+ */
+$monthDays = computed(function () {
+    $days = [];
+    $start = $this->selectedMonth->copy()->startOfMonth();
+    $end = $this->selectedMonth->copy()->endOfMonth();
+
+    // Ajouter les jours du mois précédent pour compléter la première semaine
+    $firstDayOfWeek = $start->dayOfWeekIso; // 1 = lundi, 7 = dimanche
+    for ($i = 1; $i < $firstDayOfWeek; $i++) {
+        $days[] = $start->copy()->subDays($firstDayOfWeek - $i);
+    }
+
+    // Ajouter tous les jours du mois
+    $current = $start->copy();
+    while ($current <= $end) {
+        $days[] = $current->copy();
+        $current->addDay();
+    }
+
+    // Ajouter les jours du mois suivant pour compléter la dernière semaine
+    $lastDayOfWeek = $end->dayOfWeekIso;
+    if ($lastDayOfWeek < 7) {
+        for ($i = 1; $i <= 7 - $lastDayOfWeek; $i++) {
+            $days[] = $end->copy()->addDays($i);
+        }
     }
 
     return $days;
@@ -56,6 +91,23 @@ $courses = computed(function () {
 });
 
 /**
+ * Computed property pour obtenir les cours du mois
+ */
+$monthCourses = computed(function () {
+    $startOfMonth = $this->selectedMonth->copy()->startOfMonth()->startOfDay();
+    $endOfMonth = $this->selectedMonth->copy()->endOfMonth()->endOfDay();
+
+    return \App\Models\Event::query()
+        ->courses()
+        ->betweenDates($startOfMonth, $endOfMonth)
+        ->forSubject($this->selectedSubject)
+        ->forTeacher($this->selectedTeacher)
+        ->forCourseType($this->selectedCourseType)
+        ->orderBy('start_time')
+        ->get();
+});
+
+/**
  * Computed property pour obtenir les devoirs de la semaine
  */
 $homeworks = computed(function () {
@@ -71,6 +123,21 @@ $homeworks = computed(function () {
 });
 
 /**
+ * Computed property pour obtenir les devoirs du mois
+ */
+$monthHomeworks = computed(function () {
+    $startOfMonth = $this->selectedMonth->copy()->startOfMonth()->startOfDay();
+    $endOfMonth = $this->selectedMonth->copy()->endOfMonth()->endOfDay();
+
+    return \App\Models\Event::query()
+        ->homework()
+        ->betweenDates($startOfMonth, $endOfMonth)
+        ->forSubject($this->selectedSubject)
+        ->orderBy('due_date')
+        ->get();
+});
+
+/**
  * Computed property pour obtenir les examens de la semaine
  */
 $exams = computed(function () {
@@ -80,6 +147,21 @@ $exams = computed(function () {
     return \App\Models\Event::query()
         ->exams()
         ->betweenDates($startOfWeek, $endOfWeek)
+        ->forSubject($this->selectedSubject)
+        ->orderBy('start_time')
+        ->get();
+});
+
+/**
+ * Computed property pour obtenir les examens du mois
+ */
+$monthExams = computed(function () {
+    $startOfMonth = $this->selectedMonth->copy()->startOfMonth()->startOfDay();
+    $endOfMonth = $this->selectedMonth->copy()->endOfMonth()->endOfDay();
+
+    return \App\Models\Event::query()
+        ->exams()
+        ->betweenDates($startOfMonth, $endOfMonth)
         ->forSubject($this->selectedSubject)
         ->orderBy('start_time')
         ->get();
@@ -133,6 +215,34 @@ $currentWeek = function () {
 };
 
 /**
+ * Action pour naviguer vers le mois précédent
+ */
+$previousMonth = function () {
+    $this->selectedMonth = $this->selectedMonth->copy()->subMonth();
+};
+
+/**
+ * Action pour naviguer vers le mois suivant
+ */
+$nextMonth = function () {
+    $this->selectedMonth = $this->selectedMonth->copy()->addMonth();
+};
+
+/**
+ * Action pour revenir au mois actuel
+ */
+$currentMonth = function () {
+    $this->selectedMonth = now()->startOfMonth();
+};
+
+/**
+ * Action pour basculer entre les modes d'affichage
+ */
+$toggleViewMode = function ($mode) {
+    $this->viewMode = $mode;
+};
+
+/**
  * Action pour réinitialiser tous les filtres
  */
 $clearFilters = function () {
@@ -167,7 +277,6 @@ $createHomeworkAt = function ($date, $hour) {
     // Construire les paramètres de la requête
     $params = ['due_date' => $dueDate->format('Y-m-d\TH:i')];
 
-
     if ($courseAtTime) {
         if ($courseAtTime->title) {
             $params['subject'] = $courseAtTime->title;
@@ -191,13 +300,29 @@ $createHomeworkAt = function ($date, $hour) {
                 Emploi du Temps
             </flux:heading>
             <flux:text class="mt-1 text-zinc-600 dark:text-zinc-400">
-                Planning hebdomadaire des cours et activités
+                Planning {{ $viewMode === 'month' ? 'mensuel' : 'hebdomadaire' }} des cours et activités
             </flux:text>
         </div>
 
         {{-- Actions rapides --}}
-        <div class="flex gap-2">
-            <flux:button variant="outline" icon="arrow-path" wire:click="currentWeek">
+        <div class="flex flex-wrap gap-2">
+            {{-- Sélecteur de vue --}}
+            <div class="flex rounded-lg border border-zinc-200 dark:border-zinc-700 overflow-hidden">
+                <button
+                    wire:click="toggleViewMode('week')"
+                    class="px-3 py-2 text-sm font-medium transition-colors {{ $viewMode === 'week' ? 'bg-blue-600 text-white dark:bg-blue-500' : 'bg-white text-zinc-700 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700' }}"
+                >
+                    Semaine
+                </button>
+                <button
+                    wire:click="toggleViewMode('month')"
+                    class="px-3 py-2 text-sm font-medium border-l border-zinc-200 dark:border-zinc-700 transition-colors {{ $viewMode === 'month' ? 'bg-blue-600 text-white dark:bg-blue-500' : 'bg-white text-zinc-700 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700' }}"
+                >
+                    Mois
+                </button>
+            </div>
+
+            <flux:button variant="outline" icon="arrow-path" wire:click="{{ $viewMode === 'month' ? 'currentMonth' : 'currentWeek' }}">
                 Aujourd'hui
             </flux:button>
             <a
@@ -230,28 +355,45 @@ $createHomeworkAt = function ($date, $hour) {
         </div>
     </div>
 
-    {{-- Navigation de semaine --}}
+    {{-- Navigation de semaine/mois --}}
     <div
         class="flex items-center justify-between rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-800">
-        <flux:button variant="ghost" icon="chevron-left" wire:click="previousWeek">
-            Semaine précédente
-        </flux:button>
+        @if($viewMode === 'month')
+            <flux:button variant="ghost" icon="chevron-left" wire:click="previousMonth">
+                Mois précédent
+            </flux:button>
 
-        <div class="text-center">
-            <flux:heading size="sm" class="text-lg font-medium">
-                Semaine du {{ $selectedWeek->format('d/m/Y') }}
-            </flux:heading>
-            <flux:text class="text-sm text-zinc-600 dark:text-zinc-400">
-                S{{ $selectedWeek->format('W') }} - {{ $selectedWeek->format('Y') }}
-            </flux:text>
-        </div>
+            <div class="text-center">
+                <flux:heading size="sm" class="text-lg font-medium">
+                    {{ $selectedMonth->isoFormat('MMMM YYYY') }}
+                </flux:heading>
+            </div>
 
-        <flux:button variant="ghost" icon-trailing="chevron-right" wire:click="nextWeek">
-            Semaine suivante
-        </flux:button>
+            <flux:button variant="ghost" icon-trailing="chevron-right" wire:click="nextMonth">
+                Mois suivant
+            </flux:button>
+        @else
+            <flux:button variant="ghost" icon="chevron-left" wire:click="previousWeek">
+                Semaine précédente
+            </flux:button>
+
+            <div class="text-center">
+                <flux:heading size="sm" class="text-lg font-medium">
+                    Semaine du {{ $selectedWeek->format('d/m/Y') }}
+                </flux:heading>
+                <flux:text class="text-sm text-zinc-600 dark:text-zinc-400">
+                    S{{ $selectedWeek->format('W') }} - {{ $selectedWeek->format('Y') }}
+                </flux:text>
+            </div>
+
+            <flux:button variant="ghost" icon-trailing="chevron-right" wire:click="nextWeek">
+                Semaine suivante
+            </flux:button>
+        @endif
     </div>
 
     {{-- Grille de l'emploi du temps --}}
+    @if($viewMode === 'week')
     <div class="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
         {{-- En-têtes des jours --}}
         <div class="grid grid-cols-6 border-b border-zinc-200 dark:border-zinc-700">
@@ -566,9 +708,132 @@ $createHomeworkAt = function ($date, $hour) {
             </div>
         </div>
     </div>
+    @elseif($viewMode === 'month')
+    {{-- Vue mensuelle --}}
+    <div class="rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800">
+        {{-- En-têtes des jours de la semaine --}}
+        <div class="grid grid-cols-7 border-b border-zinc-200 dark:border-zinc-700">
+            @foreach(['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'] as $dayName)
+                <div class="p-3 text-center bg-zinc-50 dark:bg-zinc-900">
+                    <flux:text class="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                        {{ $dayName }}
+                    </flux:text>
+                </div>
+            @endforeach
+        </div>
 
-    {{-- Section des devoirs de la semaine --}}
-    @if($this->homeworks->count() > 0)
+        {{-- Grille du mois --}}
+        <div class="grid grid-cols-7">
+            @foreach($this->monthDays as $day)
+                @php
+                    $isCurrentMonth = $day->month === $this->selectedMonth->month;
+                    $isToday = $day->isToday();
+
+                    // Récupérer tous les événements de ce jour
+                    $dayCoursesCount = $this->monthCourses->filter(function($course) use ($day) {
+                        return $course->start_time->isSameDay($day);
+                    })->count();
+
+                    $dayHomeworksCount = $this->monthHomeworks->filter(function($homework) use ($day) {
+                        return $homework->due_date->isSameDay($day);
+                    })->count();
+
+                    $dayExamsCount = $this->monthExams->filter(function($exam) use ($day) {
+                        return $exam->start_time->isSameDay($day);
+                    })->count();
+
+                    $totalEvents = $dayCoursesCount + $dayHomeworksCount + $dayExamsCount;
+                @endphp
+
+                <div
+                    class="min-h-24 border-t border-r border-zinc-200 dark:border-zinc-700 p-2 {{ !$isCurrentMonth ? 'bg-zinc-50/50 dark:bg-zinc-900/50' : '' }} {{ $isToday ? 'bg-blue-50 dark:bg-blue-950/30' : '' }} hover:bg-zinc-50 dark:hover:bg-zinc-800/50 transition-colors"
+                >
+                    <div class="flex items-center justify-between mb-1">
+                        <flux:text class="text-sm font-medium {{ !$isCurrentMonth ? 'text-zinc-400 dark:text-zinc-600' : '' }} {{ $isToday ? 'text-blue-600 dark:text-blue-400 font-bold' : '' }}">
+                            {{ $day->format('j') }}
+                        </flux:text>
+                        @if($totalEvents > 0)
+                            <flux:badge size="sm" color="zinc" class="text-xs">
+                                {{ $totalEvents }}
+                            </flux:badge>
+                        @endif
+                    </div>
+
+                    {{-- Afficher les événements du jour (max 3 puis "..." si plus) --}}
+                    <div class="space-y-1">
+                        @php
+                            $displayedEvents = 0;
+                            $maxDisplayedEvents = 3;
+                        @endphp
+
+                        {{-- Cours --}}
+                        @foreach($this->monthCourses->filter(function($course) use ($day) { return $course->start_time->isSameDay($day); })->take($maxDisplayedEvents - $displayedEvents) as $course)
+                            @php
+                                $courseTypeColors = [
+                                    'CM' => 'bg-blue-500',
+                                    'TD' => 'bg-green-500',
+                                    'TP' => 'bg-purple-500',
+                                ];
+                                $colorClass = $courseTypeColors[$course->course_type] ?? 'bg-zinc-500';
+                                $displayedEvents++;
+                            @endphp
+
+                            <div class="flex items-center gap-1 text-xs truncate">
+                                <div class="w-2 h-2 rounded-full {{ $colorClass }} shrink-0"></div>
+                                <span class="truncate">{{ $course->start_time->format('H:i') }} {{ $course->title }}</span>
+                            </div>
+                        @endforeach
+
+                        {{-- Examens --}}
+                        @if($displayedEvents < $maxDisplayedEvents)
+                            @foreach($this->monthExams->filter(function($exam) use ($day) { return $exam->start_time->isSameDay($day); })->take($maxDisplayedEvents - $displayedEvents) as $exam)
+                                @php $displayedEvents++; @endphp
+                                <div class="flex items-center gap-1 text-xs truncate">
+                                    <div class="w-2 h-2 rounded-full bg-orange-500 shrink-0"></div>
+                                    <span class="truncate">📋 {{ $exam->title }}</span>
+                                </div>
+                            @endforeach
+                        @endif
+
+                        {{-- Devoirs --}}
+                        @if($displayedEvents < $maxDisplayedEvents)
+                            @foreach($this->monthHomeworks->filter(function($homework) use ($day) { return $homework->due_date->isSameDay($day); })->take($maxDisplayedEvents - $displayedEvents) as $homework)
+                                @php
+                                    $priorityColors = [
+                                        'high' => 'bg-red-500',
+                                        'medium' => 'bg-yellow-500',
+                                        'low' => 'bg-zinc-400',
+                                    ];
+                                    $colorClass = $priorityColors[$homework->priority] ?? 'bg-zinc-400';
+                                    $displayedEvents++;
+                                @endphp
+
+                                <div class="flex items-center gap-1 text-xs truncate">
+                                    <div class="w-2 h-2 rounded-full {{ $colorClass }} shrink-0"></div>
+                                    <span class="truncate">📝 {{ $homework->title }}</span>
+                                </div>
+                            @endforeach
+                        @endif
+
+                        {{-- Afficher "..." si plus d'événements --}}
+                        @if($totalEvents > $maxDisplayedEvents)
+                            <flux:text class="text-xs text-zinc-500 dark:text-zinc-400">
+                                +{{ $totalEvents - $maxDisplayedEvents }} autre(s)
+                            </flux:text>
+                        @endif
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
+    @endif
+
+    {{-- Section des devoirs --}}
+    @php
+        $displayHomeworks = $viewMode === 'month' ? $this->monthHomeworks : $this->homeworks;
+        $periodLabel = $viewMode === 'month' ? 'du mois' : 'de la semaine';
+    @endphp
+    @if($displayHomeworks->count() > 0)
         <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
             <div class="mb-4 flex items-center justify-between">
                 <div class="flex items-center gap-3">
@@ -578,7 +843,7 @@ $createHomeworkAt = function ($date, $hour) {
                               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                     </svg>
                     <flux:heading size="sm" class="text-lg font-medium">
-                        Devoirs de la semaine
+                        Devoirs {{ $periodLabel }}
                     </flux:heading>
                 </div>
                 <flux:button href="{{ route('homeworks.index') }}" variant="ghost" size="sm" wire:navigate>
@@ -587,7 +852,7 @@ $createHomeworkAt = function ($date, $hour) {
             </div>
 
             <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                @foreach($this->homeworks as $homework)
+                @foreach($displayHomeworks as $homework)
                     @php
                         $priorityColors = [
                             'high' => 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-950/30',
@@ -649,8 +914,11 @@ $createHomeworkAt = function ($date, $hour) {
         </div>
     @endif
 
-    {{-- Section des examens de la semaine --}}
-    @if($this->exams->count() > 0)
+    {{-- Section des examens --}}
+    @php
+        $displayExams = $viewMode === 'month' ? $this->monthExams : $this->exams;
+    @endphp
+    @if($displayExams->count() > 0)
         <div class="rounded-lg border border-orange-200 bg-white p-6 dark:border-orange-700 dark:bg-zinc-800">
             <div class="mb-4 flex items-center justify-between">
                 <div class="flex items-center gap-3">
@@ -660,13 +928,13 @@ $createHomeworkAt = function ($date, $hour) {
                               d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/>
                     </svg>
                     <flux:heading size="sm" class="text-lg font-medium">
-                        Examens de la semaine
+                        Examens {{ $periodLabel }}
                     </flux:heading>
                 </div>
             </div>
 
             <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                @foreach($this->exams as $exam)
+                @foreach($displayExams as $exam)
                     <div
                         class="block rounded-lg border border-orange-300 bg-orange-50 dark:border-orange-700 dark:bg-orange-950/30 p-4 transition-colors hover:border-orange-400 dark:hover:border-orange-600">
                         <div class="flex items-start justify-between gap-2 mb-2">
@@ -826,22 +1094,21 @@ $createHomeworkAt = function ($date, $hour) {
             </div>
         </div>
 
-            {{-- Actions disponibles (pour plus tard) --}}
-            <div>
-                <flux:text class="mb-2 text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                    Actions disponibles
+        {{-- Actions disponibles (pour plus tard) --}}
+        <div class="mt-4">
+            <flux:text class="mb-2 text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                Actions disponibles
+            </flux:text>
+            <div class="space-y-2">
+                <flux:text class="text-sm text-green-600 dark:text-green-400">
+                    ✓ Exporter au format iCal (ICS)
                 </flux:text>
-                <div class="space-y-2">
-                    <flux:text class="text-sm text-green-600 dark:text-green-400">
-                        ✓ Exporter au format iCal (ICS)
-                    </flux:text>
-                    <flux:text class="text-sm text-zinc-600 dark:text-zinc-400">
-                        • Exporter en PDF
-                    </flux:text>
-                    <flux:text class="text-sm text-zinc-600 dark:text-zinc-400">
-                        • S'abonner aux notifications
-                    </flux:text>
-                </div>
+                <flux:text class="text-sm text-zinc-600 dark:text-zinc-400">
+                    • Exporter en PDF
+                </flux:text>
+                <flux:text class="text-sm text-zinc-600 dark:text-zinc-400">
+                    • S'abonner aux notifications
+                </flux:text>
             </div>
         </div>
     </div>

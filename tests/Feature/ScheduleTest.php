@@ -36,7 +36,6 @@ test('schedule page displays main sections', function () {
         ->get(route('schedule.index'))
         ->assertSee('Emploi du Temps')
         ->assertSee('Planning hebdomadaire des cours et activités')
-        ->assertSee('Filtres')
         ->assertSee('Changements de dernière minute')
         ->assertSee('Légende');
 });
@@ -182,4 +181,164 @@ test('schedule displays legend with course types', function () {
         ->assertSee('Cours Magistral (CM)')
         ->assertSee('Travaux Dirigés (TD)')
         ->assertSee('Travaux Pratiques (TP)');
+});
+
+// Tests pour la vue mensuelle
+test('schedule component can toggle to month view', function () {
+    $user = User::factory()->create();
+
+    Volt::actingAs($user)
+        ->test('schedule.index')
+        ->call('toggleViewMode', 'month')
+        ->assertSet('viewMode', 'month')
+        ->assertSee('mensuel');
+});
+
+test('schedule component can toggle back to week view', function () {
+    $user = User::factory()->create();
+
+    Volt::actingAs($user)
+        ->test('schedule.index')
+        ->call('toggleViewMode', 'month')
+        ->assertSet('viewMode', 'month')
+        ->call('toggleViewMode', 'week')
+        ->assertSet('viewMode', 'week')
+        ->assertSee('hebdomadaire');
+});
+
+test('schedule component initializes with current month', function () {
+    $user = User::factory()->create();
+
+    $component = Volt::actingAs($user)->test('schedule.index');
+
+    expect($component->selectedMonth->format('m/Y'))->toBe(now()->startOfMonth()->format('m/Y'));
+});
+
+test('user can navigate to previous month', function () {
+    $user = User::factory()->create();
+
+    $previousMonth = now()->startOfMonth()->subMonth();
+
+    Volt::actingAs($user)
+        ->test('schedule.index')
+        ->call('toggleViewMode', 'month')
+        ->call('previousMonth')
+        ->assertSee($previousMonth->isoFormat('MMMM YYYY'));
+});
+
+test('user can navigate to next month', function () {
+    $user = User::factory()->create();
+
+    $nextMonth = now()->startOfMonth()->addMonth();
+
+    Volt::actingAs($user)
+        ->test('schedule.index')
+        ->call('toggleViewMode', 'month')
+        ->call('nextMonth')
+        ->assertSee($nextMonth->isoFormat('MMMM YYYY'));
+});
+
+test('user can return to current month', function () {
+    $user = User::factory()->create();
+
+    Volt::actingAs($user)
+        ->test('schedule.index')
+        ->call('toggleViewMode', 'month')
+        ->call('nextMonth')
+        ->call('nextMonth')
+        ->call('currentMonth')
+        ->assertSee(now()->isoFormat('MMMM YYYY'));
+});
+
+test('month view displays all days of the week headers', function () {
+    $user = User::factory()->create();
+
+    Volt::actingAs($user)
+        ->test('schedule.index')
+        ->call('toggleViewMode', 'month')
+        ->assertSee(['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']);
+});
+
+test('month view displays events for the current month', function () {
+    $user = User::factory()->create();
+
+    $eventDate = now()->startOfMonth()->addDays(10)->setTime(14, 0);
+    $course = \App\Models\Event::factory()->course()->create([
+        'title' => 'Monthly Course',
+        'start_time' => $eventDate,
+        'end_time' => $eventDate->copy()->addHour(),
+        'course_type' => 'CM',
+    ]);
+
+    Volt::actingAs($user)
+        ->test('schedule.index')
+        ->call('toggleViewMode', 'month')
+        ->assertSee('Monthly Course');
+});
+
+test('month view shows homework count badge when events exist', function () {
+    $user = User::factory()->create();
+
+    $dueDate = now()->startOfMonth()->addDays(5)->setTime(10, 0);
+    $homework = \App\Models\Event::factory()->homework()->create([
+        'title' => 'Month Homework',
+        'due_date' => $dueDate,
+        'start_time' => $dueDate->copy()->addMinute(),
+        'end_time' => $dueDate->copy()->addMinutes(2),
+    ]);
+
+    Volt::actingAs($user)
+        ->test('schedule.index')
+        ->call('toggleViewMode', 'month')
+        ->assertSee('Month Homework');
+});
+
+test('month view displays homeworks and exams for the month', function () {
+    $user = User::factory()->create();
+
+    $homeworkDate = now()->startOfMonth()->addDays(5)->setTime(10, 0);
+    $homework = \App\Models\Event::factory()->homework()->create([
+        'title' => 'Monthly Homework',
+        'due_date' => $homeworkDate,
+        'start_time' => $homeworkDate->copy()->addMinute(),
+        'end_time' => $homeworkDate->copy()->addMinutes(2),
+    ]);
+
+    $examDate = now()->startOfMonth()->addDays(15)->setTime(14, 0);
+    $exam = \App\Models\Event::factory()->exam()->create([
+        'title' => 'Monthly Exam',
+        'start_time' => $examDate,
+        'end_time' => $examDate->copy()->addHours(2),
+    ]);
+
+    Volt::actingAs($user)
+        ->test('schedule.index')
+        ->call('toggleViewMode', 'month')
+        ->assertSee('Devoirs du mois')
+        ->assertSee('Examens du mois')
+        ->assertSee('Monthly Homework')
+        ->assertSee('Monthly Exam');
+});
+
+test('month view updates period label in sections', function () {
+    $user = User::factory()->create();
+
+    $dueDate = now()->startOfWeek()->addDays(2)->setTime(10, 0);
+    $homework = \App\Models\Event::factory()->homework()->create([
+        'title' => 'Test Homework',
+        'due_date' => $dueDate,
+        'start_time' => $dueDate->copy()->addMinute(),
+        'end_time' => $dueDate->copy()->addMinutes(2),
+    ]);
+
+    // Test week view shows "de la semaine"
+    $this->actingAs($user)
+        ->get(route('schedule.index'))
+        ->assertSee('Devoirs de la semaine');
+
+    // Test month view shows "du mois"
+    Volt::actingAs($user)
+        ->test('schedule.index')
+        ->call('toggleViewMode', 'month')
+        ->assertSee('Devoirs du mois');
 });
