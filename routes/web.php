@@ -60,3 +60,4 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Volt::route('import-ics', 'admin.import-ics')->name('admin.import-ics');
     Volt::route('import-pdf', 'admin.import-pdf')->name('admin.import-pdf');
 });
+

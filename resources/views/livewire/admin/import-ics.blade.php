@@ -122,9 +122,20 @@ $confirmImport = function () {
 
         session()->flash('success', "{$result['imported']} événement(s) importé(s) avec succès!");
 
+        // Track import event with Umami
+        umami('ics_import', [
+            'imported_count' => $result['imported'],
+            'skipped_count' => $result['skipped'] ?? 0,
+            'replace_existing' => $this->replaceExisting,
+            'ignore_past_events' => $this->ignorePastEvents,
+        ]);
+
         // Réinitialiser après succès
         $this->resetForm();
     } catch (\Exception $e) {
+        umami('ics_import_error', [
+            'error_message' => $e->getMessage(),
+        ]);
         session()->flash('error', 'Erreur lors de l\'importation: ' . $e->getMessage());
     } finally {
         $this->importing = false;

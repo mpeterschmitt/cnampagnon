@@ -44,7 +44,7 @@ $processPDF = function () {
     try {
         // Sauvegarder temporairement le fichier
         $path = $this->file->store('temp', 'local');
-        $fullPath = storage_path('app/private/' . $path);
+        $fullPath = storage_path('app/private/'.$path);
 
         // Utiliser le service pour extraire les données
         $pdfService = new PdfImportService;
@@ -53,11 +53,22 @@ $processPDF = function () {
         // Stocker les données extraites
         $this->extractedData = $result;
 
+        // Track successful PDF processing with Umami
+        umami('pdf_processed', [
+            'events_extracted' => count($result['events'] ?? []),
+            'processing_method' => $result['method'] ?? 'ocr',
+        ]);
+
         $this->dispatch('processing-complete', [
             'count' => count($result['events'] ?? []),
         ]);
     } catch (\Exception $e) {
-        $this->errorMessage = 'Erreur lors du traitement du PDF : ' . $e->getMessage();
+        // Track PDF processing error with Umami
+        umami('pdf_processing_error', [
+            'error_message' => $e->getMessage(),
+        ]);
+
+        $this->errorMessage = 'Erreur lors du traitement du PDF : '.$e->getMessage();
         \Log::error('PDF processing error', [
             'error' => $e->getMessage(),
             'file' => $this->file?->getClientOriginalName(),
@@ -71,7 +82,7 @@ $processPDF = function () {
  * Confirme l'importation et sauvegarde les événements en base de données
  */
 $confirmImport = function () {
-    if (!$this->extractedData || empty($this->extractedData['events'])) {
+    if (! $this->extractedData || empty($this->extractedData['events'])) {
         $this->errorMessage = 'Aucune donnée à importer.';
 
         return;
@@ -111,10 +122,22 @@ $confirmImport = function () {
         }
 
         $this->importedCount = $count;
+
+        // Track import event with Umami
+        umami('pdf_import', [
+            'imported_count' => $count,
+            'total_extracted' => count($this->extractedData['events']),
+            'replace_existing' => $this->replaceExisting,
+            'ignore_passed_events' => $this->ignorePassedEvents,
+        ]);
+
         $this->dispatch('import-confirmed', ['count' => $count]);
         $this->resetForm();
     } catch (\Exception $e) {
-        $this->errorMessage = 'Erreur lors de l\'importation : ' . $e->getMessage();
+        umami('pdf_import_error', [
+            'error_message' => $e->getMessage(),
+        ]);
+        $this->errorMessage = 'Erreur lors de l\'importation : '.$e->getMessage();
         \Log::error('Import error', [
             'error' => $e->getMessage(),
             'data' => $this->extractedData,
