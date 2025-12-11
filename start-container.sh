@@ -8,4 +8,4 @@ echo "Running migrations..."
 php artisan migrate --force
 
 echo "Starting FrankenPHP..."
-php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=8000
+php artisan octane:start --server=frankenphp --host=0.0.0.0 --port=8000 --log-level=info
