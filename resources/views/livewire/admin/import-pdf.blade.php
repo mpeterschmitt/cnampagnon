@@ -94,7 +94,22 @@ $confirmImport = function () {
     try {
         // Si on doit remplacer l'emploi du temps existant, supprimer tous les cours
         if ($this->replaceExisting) {
-            Event::where('type', 'course')->orWhere('type', 'exam')->delete();
+            $events = collect($this->extractedData['events']);
+
+            $min = $events->min(function ($event) {
+                return Carbon::parse($event['start_time']);
+            });
+            $max = $events->max(function ($event) {
+                return Carbon::parse($event['end_time']);
+            });
+
+            Event::query()
+                ->whereNot('source', 'manual')
+                ->where(function ($query) use ($min, $max) {
+                    $query->whereBetween('start_time', [$min, $max])
+                        ->orWhereBetween('end_time', [$min, $max]);
+                })
+                ->delete();
         }
 
         foreach ($this->extractedData['events'] as $eventData) {

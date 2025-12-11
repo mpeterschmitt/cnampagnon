@@ -602,7 +602,9 @@ $createHomeworkAt = function ($date, $hour) {
                                             'medium' => 'bg-yellow-100 border-yellow-400 text-yellow-900 dark:bg-yellow-950 dark:border-yellow-700 dark:text-yellow-200',
                                             'low' => 'bg-zinc-100 border-zinc-400 text-zinc-900 dark:bg-zinc-950 dark:border-zinc-700 dark:text-zinc-200',
                                         ];
-                                        $colorClass = $priorityColors[$event->priority] ?? $priorityColors['low'];
+                                        $colorClass = ($event->priority && isset($priorityColors[$event->priority]))
+                                            ? $priorityColors[$event->priority]
+                                            : $priorityColors['low'];
                                         $isOverdue = $event->due_date < now() && !$event->completed;
                                     @endphp
 
@@ -669,7 +671,9 @@ $createHomeworkAt = function ($date, $hour) {
                                             'TD' => 'bg-green-100 border-green-300 text-green-900 dark:bg-green-950 dark:border-green-800 dark:text-green-200',
                                             'TP' => 'bg-purple-100 border-purple-300 text-purple-900 dark:bg-purple-950 dark:border-purple-800 dark:text-purple-200',
                                         ];
-                                        $colorClass = $courseTypeColors[$event->course_type] ?? 'bg-zinc-100 border-zinc-300 text-zinc-900 dark:bg-zinc-950 dark:border-zinc-800 dark:text-zinc-200';
+                                        $colorClass = ($event->course_type && isset($courseTypeColors[$event->course_type]))
+                                            ? $courseTypeColors[$event->course_type]
+                                            : 'bg-zinc-100 border-zinc-300 text-zinc-900 dark:bg-zinc-950 dark:border-zinc-800 dark:text-zinc-200';
                                     @endphp
 
                                     <div
@@ -762,20 +766,33 @@ $createHomeworkAt = function ($date, $hour) {
                     {{-- Afficher les événements du jour (max 3 puis "..." si plus) --}}
                     <div class="space-y-1">
                         @php
-                            $displayedEvents = 0;
                             $maxDisplayedEvents = 3;
+                            $dayDisplayedEvents = 0;
+
+                            // Récupérer les événements de ce jour spécifique
+                            $dayCourses = $this->monthCourses->filter(function($course) use ($day) {
+                                return $course->start_time->isSameDay($day);
+                            });
+                            $dayExamsFiltered = $this->monthExams->filter(function($exam) use ($day) {
+                                return $exam->start_time->isSameDay($day);
+                            });
+                            $dayHomeworksFiltered = $this->monthHomeworks->filter(function($homework) use ($day) {
+                                return $homework->due_date->isSameDay($day);
+                            });
                         @endphp
 
                         {{-- Cours --}}
-                        @foreach($this->monthCourses->filter(function($course) use ($day) { return $course->start_time->isSameDay($day); })->take($maxDisplayedEvents - $displayedEvents) as $course)
+                        @foreach($dayCourses->take($maxDisplayedEvents - $dayDisplayedEvents) as $course)
                             @php
                                 $courseTypeColors = [
                                     'CM' => 'bg-blue-500',
                                     'TD' => 'bg-green-500',
                                     'TP' => 'bg-purple-500',
                                 ];
-                                $colorClass = $courseTypeColors[$course->course_type] ?? 'bg-zinc-500';
-                                $displayedEvents++;
+                                $colorClass = ($course->course_type && isset($courseTypeColors[$course->course_type]))
+                                    ? $courseTypeColors[$course->course_type]
+                                    : 'bg-zinc-500';
+                                $dayDisplayedEvents++;
                             @endphp
 
                             <div class="flex items-center gap-1 text-xs truncate">
@@ -785,9 +802,9 @@ $createHomeworkAt = function ($date, $hour) {
                         @endforeach
 
                         {{-- Examens --}}
-                        @if($displayedEvents < $maxDisplayedEvents)
-                            @foreach($this->monthExams->filter(function($exam) use ($day) { return $exam->start_time->isSameDay($day); })->take($maxDisplayedEvents - $displayedEvents) as $exam)
-                                @php $displayedEvents++; @endphp
+                        @if($dayDisplayedEvents < $maxDisplayedEvents)
+                            @foreach($dayExamsFiltered->take($maxDisplayedEvents - $dayDisplayedEvents) as $exam)
+                                @php $dayDisplayedEvents++; @endphp
                                 <div class="flex items-center gap-1 text-xs truncate">
                                     <div class="w-2 h-2 rounded-full bg-orange-500 shrink-0"></div>
                                     <span class="truncate">📋 {{ $exam->title }}</span>
@@ -796,16 +813,18 @@ $createHomeworkAt = function ($date, $hour) {
                         @endif
 
                         {{-- Devoirs --}}
-                        @if($displayedEvents < $maxDisplayedEvents)
-                            @foreach($this->monthHomeworks->filter(function($homework) use ($day) { return $homework->due_date->isSameDay($day); })->take($maxDisplayedEvents - $displayedEvents) as $homework)
+                        @if($dayDisplayedEvents < $maxDisplayedEvents)
+                            @foreach($dayHomeworksFiltered->take($maxDisplayedEvents - $dayDisplayedEvents) as $homework)
                                 @php
                                     $priorityColors = [
                                         'high' => 'bg-red-500',
                                         'medium' => 'bg-yellow-500',
                                         'low' => 'bg-zinc-400',
                                     ];
-                                    $colorClass = $priorityColors[$homework->priority] ?? 'bg-zinc-400';
-                                    $displayedEvents++;
+                                    $colorClass = ($homework->priority && isset($priorityColors[$homework->priority]))
+                                        ? $priorityColors[$homework->priority]
+                                        : 'bg-zinc-400';
+                                    $dayDisplayedEvents++;
                                 @endphp
 
                                 <div class="flex items-center gap-1 text-xs truncate">
@@ -859,7 +878,9 @@ $createHomeworkAt = function ($date, $hour) {
                             'medium' => 'border-yellow-300 bg-yellow-50 dark:border-yellow-700 dark:bg-yellow-950/30',
                             'low' => 'border-zinc-300 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900/30',
                         ];
-                        $homeworkBorderClass = $priorityColors[$homework->priority] ?? $priorityColors['low'];
+                        $homeworkBorderClass = ($homework->priority && isset($priorityColors[$homework->priority]))
+                            ? $priorityColors[$homework->priority]
+                            : $priorityColors['low'];
                         $isOverdue = $homework->due_date < now() && !$homework->completed;
                     @endphp
 
