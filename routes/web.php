@@ -1,11 +1,15 @@
 <?php
 
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\RedirectController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 use Livewire\Volt\Volt;
 
 Volt::route('/', 'home')->name('home');
+
+// Route pour les liens de redirection courts
+Route::get('s/{code}', [RedirectController::class, 'handle'])->name('redirect.handle');
 
 Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
@@ -57,7 +61,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::redirect('/', 'admin/users');
 
     Volt::route('users', 'admin.users')->name('admin.users');
+    Volt::route('redirects', 'admin.redirects')->name('admin.redirects');
     Volt::route('import-ics', 'admin.import-ics')->name('admin.import-ics');
     Volt::route('import-pdf', 'admin.import-pdf')->name('admin.import-pdf');
 });
-
