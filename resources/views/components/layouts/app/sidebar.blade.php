@@ -21,6 +21,7 @@
                 @if(auth()->user()->isAdmin())
                     <flux:navlist.group :heading="__('Administration')" class="grid">
                         <flux:navlist.item icon="users" :href="route('admin.users')" :current="request()->routeIs('admin.users')" wire:navigate>{{ __('Utilisateurs') }}</flux:navlist.item>
+                        <flux:navlist.item icon="link" :href="route('admin.redirects')" :current="request()->routeIs('admin.redirects')" wire:navigate>{{ __('Redirections') }}</flux:navlist.item>
                         <flux:navlist.item icon="document-arrow-up" :href="route('admin.import-ics')" :current="request()->routeIs('admin.import-ics')" wire:navigate>{{ __('Import ICS') }}</flux:navlist.item>
                         <flux:navlist.item icon="document-text" :href="route('admin.import-pdf')" :current="request()->routeIs('admin.import-pdf')" wire:navigate>{{ __('Import PDF') }}</flux:navlist.item>
                     </flux:navlist.group>

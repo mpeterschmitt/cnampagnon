@@ -13,6 +13,9 @@ test('unauthenticated users cannot access admin pages', function () {
     $this->get(route('admin.users'))
         ->assertRedirect(route('login'));
 
+    $this->get(route('admin.redirects'))
+        ->assertRedirect(route('login'));
+
     $this->get(route('admin.import-ics'))
         ->assertRedirect(route('login'));
 
@@ -26,6 +29,10 @@ test('regular users cannot access admin pages', function () {
 
     $this->actingAs($user)
         ->get(route('admin.users'))
+        ->assertForbidden();
+
+    $this->actingAs($user)
+        ->get(route('admin.redirects'))
         ->assertForbidden();
 
     $this->actingAs($user)
@@ -45,6 +52,11 @@ test('admin users can access admin pages', function () {
         ->get(route('admin.users'))
         ->assertSuccessful()
         ->assertSeeLivewire('admin.users');
+
+    $this->actingAs($admin)
+        ->get(route('admin.redirects'))
+        ->assertSuccessful()
+        ->assertSeeLivewire('admin.redirects');
 
     $this->actingAs($admin)
         ->get(route('admin.import-ics'))
