@@ -68,6 +68,26 @@ test('admin can create a new redirect', function () {
     expect($redirect->created_by)->toBe($admin->id);
 });
 
+// Test création de redirect sans titre ni description (champs optionnels)
+test('admin can create a redirect without optional title and description', function () {
+    $admin = User::factory()->admin()->create();
+
+    Livewire::actingAs($admin)
+        ->test('admin.redirects')
+        ->set('form.code', 'minimal-link')
+        ->set('form.url', 'https://example.com')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(Redirect::where('code', 'minimal-link')->exists())->toBeTrue();
+
+    $redirect = Redirect::where('code', 'minimal-link')->first();
+    expect($redirect->url)->toBe('https://example.com');
+    expect($redirect->title)->toBeNull();
+    expect($redirect->description)->toBeNull();
+    expect($redirect->created_by)->toBe($admin->id);
+});
+
 // Test modification de redirect
 test('admin can update an existing redirect', function () {
     $admin = User::factory()->admin()->create();

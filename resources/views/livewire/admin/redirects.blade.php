@@ -12,55 +12,60 @@ use function Livewire\Volt\{computed, layout, state, rules};
  * Permet aux administrateurs de créer et gérer des liens courts
  * accessibles via /s/{code}
  */
-layout('components.layouts.app');
+layout("components.layouts.app");
 
 // État du composant
 state([
-    'search' => '',
-    'filterStatus' => 'all', // all, active, inactive
-    'sortBy' => 'created_at',
-    'sortDirection' => 'desc',
-    'showModal' => false,
-    'showClicksModal' => false,
-    'viewingRedirectId' => null,
-    'editingId' => null,
-    'form' => [
-        'code' => '',
-        'url' => '',
-        'title' => '',
-        'description' => '',
-        'is_active' => true,
+    "search" => "",
+    "filterStatus" => "all", // all, active, inactive
+    "sortBy" => "created_at",
+    "sortDirection" => "desc",
+    "showModal" => false,
+    "showClicksModal" => false,
+    "viewingRedirectId" => null,
+    "editingId" => null,
+    "form" => [
+        "code" => "",
+        "url" => "",
+        "title" => "",
+        "description" => "",
+        "is_active" => true,
     ],
 ]);
 
 rules([
-    'form.code' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z0-9_-]+$/'],
-    'form.url' => ['required', 'url', 'max:2048'],
-    'form.title' => ['nullable', 'string', 'max:255'],
-    'form.description' => ['nullable', 'string', 'max:1000'],
-    'form.is_active' => ['boolean'],
+    "form.code" => [
+        "required",
+        "string",
+        "max:255",
+        'regex:/^[a-zA-Z0-9_-]+$/',
+    ],
+    "form.url" => ["required", "url", "max:2048"],
+    "form.title" => ["nullable", "string", "max:255"],
+    "form.description" => ["nullable", "string", "max:1000"],
+    "form.is_active" => ["boolean"],
 ]);
 
 /**
  * Computed property pour obtenir les redirects filtrés
  */
 $redirects = computed(function () {
-    $query = Redirect::query()->with('creator');
+    $query = Redirect::query()->with("creator");
 
     // Recherche
     if ($this->search) {
         $query->where(function ($q) {
-            $q->where('code', 'like', "%{$this->search}%")
-                ->orWhere('url', 'like', "%{$this->search}%")
-                ->orWhere('title', 'like', "%{$this->search}%");
+            $q->where("code", "like", "%{$this->search}%")
+                ->orWhere("url", "like", "%{$this->search}%")
+                ->orWhere("title", "like", "%{$this->search}%");
         });
     }
 
     // Filtre par statut
-    if ($this->filterStatus === 'active') {
-        $query->where('is_active', true);
-    } elseif ($this->filterStatus === 'inactive') {
-        $query->where('is_active', false);
+    if ($this->filterStatus === "active") {
+        $query->where("is_active", true);
+    } elseif ($this->filterStatus === "inactive") {
+        $query->where("is_active", false);
     }
 
     // Tri
@@ -74,10 +79,10 @@ $redirects = computed(function () {
  */
 $stats = computed(function () {
     return [
-        'total' => Redirect::count(),
-        'active' => Redirect::where('is_active', true)->count(),
-        'inactive' => Redirect::where('is_active', false)->count(),
-        'total_clicks' => Redirect::sum('clicks'),
+        "total" => Redirect::count(),
+        "active" => Redirect::where("is_active", true)->count(),
+        "inactive" => Redirect::where("is_active", false)->count(),
+        "total_clicks" => Redirect::sum("clicks"),
     ];
 });
 
@@ -85,8 +90,14 @@ $stats = computed(function () {
  * Action pour ouvrir le modal de création
  */
 $openCreateModal = function () {
-    $this->reset('form', 'editingId');
-    $this->form['is_active'] = true;
+    $this->editingId = null;
+    $this->form = [
+        "code" => "",
+        "url" => "",
+        "title" => "",
+        "description" => "",
+        "is_active" => true,
+    ];
     $this->showModal = true;
     $this->resetValidation();
 };
@@ -99,11 +110,11 @@ $openEditModal = function ($redirectId) {
 
     $this->editingId = $redirect->id;
     $this->form = [
-        'code' => $redirect->code,
-        'url' => $redirect->url,
-        'title' => $redirect->title ?? '',
-        'description' => $redirect->description ?? '',
-        'is_active' => $redirect->is_active,
+        "code" => $redirect->code,
+        "url" => $redirect->url,
+        "title" => $redirect->title ?? "",
+        "description" => $redirect->description ?? "",
+        "is_active" => $redirect->is_active,
     ];
 
     $this->showModal = true;
@@ -115,7 +126,7 @@ $openEditModal = function ($redirectId) {
  */
 $closeModal = function () {
     $this->showModal = false;
-    $this->reset('form', 'editingId');
+    $this->reset("form", "editingId");
     $this->resetValidation();
 };
 
@@ -124,27 +135,29 @@ $closeModal = function () {
  */
 $save = function () {
     // Ajouter la règle unique dynamiquement
-    $codeRules = ['required', 'string', 'max:255', 'regex:/^[a-zA-Z0-9_-]+$/'];
+    $codeRules = ["required", "string", "max:255", 'regex:/^[a-zA-Z0-9_-]+$/'];
     if ($this->editingId) {
-        $codeRules[] = Rule::unique('redirects', 'code')->ignore($this->editingId);
+        $codeRules[] = Rule::unique("redirects", "code")->ignore(
+            $this->editingId,
+        );
     } else {
-        $codeRules[] = 'unique:redirects,code';
+        $codeRules[] = "unique:redirects,code";
     }
 
     $this->validate([
-        'form.code' => $codeRules,
-        'form.url' => ['required', 'url', 'max:2048'],
-        'form.title' => ['nullable', 'string', 'max:255'],
-        'form.description' => ['nullable', 'string', 'max:1000'],
-        'form.is_active' => ['boolean'],
+        "form.code" => $codeRules,
+        "form.url" => ["required", "url", "max:2048"],
+        "form.title" => ["nullable", "string", "max:255"],
+        "form.description" => ["nullable", "string", "max:1000"],
+        "form.is_active" => ["boolean"],
     ]);
 
     $data = [
-        'code' => $this->form['code'],
-        'url' => $this->form['url'],
-        'title' => $this->form['title'] ?: null,
-        'description' => $this->form['description'] ?: null,
-        'is_active' => $this->form['is_active'],
+        "code" => $this->form["code"],
+        "url" => $this->form["url"],
+        "title" => $this->form["title"] ?? null,
+        "description" => $this->form["description"] ?? null,
+        "is_active" => $this->form["is_active"] ?? true,
     ];
 
     if ($this->editingId) {
@@ -152,13 +165,13 @@ $save = function () {
         $redirect->update($data);
         $message = "Le lien de redirection a été mis à jour avec succès.";
     } else {
-        $data['created_by'] = auth()->id();
+        $data["created_by"] = auth()->id();
         Redirect::create($data);
         $message = "Le lien de redirection a été créé avec succès.";
     }
 
     $this->closeModal();
-    $this->dispatch('success', message: $message);
+    $this->dispatch("success", message: $message);
 };
 
 /**
@@ -166,10 +179,10 @@ $save = function () {
  */
 $toggleStatus = function ($redirectId) {
     $redirect = Redirect::findOrFail($redirectId);
-    $redirect->update(['is_active' => !$redirect->is_active]);
+    $redirect->update(["is_active" => !$redirect->is_active]);
 
-    $status = $redirect->is_active ? 'activé' : 'désactivé';
-    $this->dispatch('success', message: "Le lien a été {$status}.");
+    $status = $redirect->is_active ? "activé" : "désactivé";
+    $this->dispatch("success", message: "Le lien a été {$status}.");
 };
 
 /**
@@ -180,7 +193,7 @@ $deleteRedirect = function ($redirectId) {
     $code = $redirect->code;
     $redirect->delete();
 
-    $this->dispatch('success', message: "Le lien '{$code}' a été supprimé.");
+    $this->dispatch("success", message: "Le lien '{$code}' a été supprimé.");
 };
 
 /**
@@ -189,9 +202,9 @@ $deleteRedirect = function ($redirectId) {
 $generateRandomCode = function () {
     do {
         $code = Str::random(6);
-    } while (Redirect::where('code', $code)->exists());
+    } while (Redirect::where("code", $code)->exists());
 
-    $this->form['code'] = $code;
+    $this->form["code"] = $code;
 };
 
 /**
@@ -199,10 +212,10 @@ $generateRandomCode = function () {
  */
 $changeSortBy = function ($column) {
     if ($this->sortBy === $column) {
-        $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        $this->sortDirection = $this->sortDirection === "asc" ? "desc" : "asc";
     } else {
         $this->sortBy = $column;
-        $this->sortDirection = 'asc';
+        $this->sortDirection = "asc";
     }
 };
 
@@ -210,7 +223,7 @@ $changeSortBy = function ($column) {
  * Action pour copier le lien dans le presse-papier
  */
 $copyLink = function ($code) {
-    $this->dispatch('copy-to-clipboard', code: $code);
+    $this->dispatch("copy-to-clipboard", code: $code);
 };
 
 /**
@@ -237,23 +250,31 @@ $clickDetails = computed(function () {
         return null;
     }
 
-    $redirect = Redirect::with(['clickRecords' => function ($query) {
-        $query->with('user')->orderBy('clicked_at', 'desc')->limit(100);
-    }])->find($this->viewingRedirectId);
+    $redirect = Redirect::with([
+        "clickRecords" => function ($query) {
+            $query->with("user")->orderBy("clicked_at", "desc")->limit(100);
+        },
+    ])->find($this->viewingRedirectId);
 
     if (!$redirect) {
         return null;
     }
 
     return [
-        'redirect' => $redirect,
-        'clicks' => $redirect->clickRecords,
-        'unique_users' => $redirect->clickRecords->where('user_id', '!=', null)->unique('user_id')->count(),
-        'anonymous_clicks' => $redirect->clickRecords->where('user_id', null)->count(),
-        'registered_clicks' => $redirect->clickRecords->where('user_id', '!=', null)->count(),
+        "redirect" => $redirect,
+        "clicks" => $redirect->clickRecords,
+        "unique_users" => $redirect->clickRecords
+            ->where("user_id", "!=", null)
+            ->unique("user_id")
+            ->count(),
+        "anonymous_clicks" => $redirect->clickRecords
+            ->where("user_id", null)
+            ->count(),
+        "registered_clicks" => $redirect->clickRecords
+            ->where("user_id", "!=", null)
+            ->count(),
     ];
 });
-
 ?>
 
 <div class="space-y-6"
@@ -565,7 +586,7 @@ $clickDetails = computed(function () {
             <flux:text class="text-sm font-medium text-zinc-600 dark:text-zinc-400">
                 Inactifs
             </flux:text>
-            <flux:heading size="lg" class="mt-2 text-3xl font-bold text-orange-600 dark:text-orange-400">
+            <flux:heading size="lg" class="mt-2 text-3xl font-bold text-red-600 dark:text-red-400">
                 {{ $this->stats['inactive'] }}
             </flux:heading>
         </div>
@@ -698,9 +719,13 @@ $clickDetails = computed(function () {
                         </td>
                         <td class="px-6 py-4">
                             @if($redirect->is_active)
-                                <flux:badge variant="success" size="sm">Actif</flux:badge>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                    Actif
+                                </span>
                             @else
-                                <flux:badge variant="warning" size="sm">Inactif</flux:badge>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                                    Inactif
+                                </span>
                             @endif
                         </td>
                         <td class="px-6 py-4">
