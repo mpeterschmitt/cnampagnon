@@ -14,6 +14,7 @@ state([
     'filter' => 'all', // all, incomplete, completed, upcoming, overdue
     'selectedSubject' => null,
     'search' => '',
+    'showHidden' => false, // Show hidden homeworks
 ]);
 
 /**
@@ -21,6 +22,16 @@ state([
  */
 $homeworks = computed(function () {
     $query = Event::homework();
+
+    // Si on ne veut pas afficher les devoirs cachés, les filtrer
+    if (!$this->showHidden) {
+        $query->notHiddenBy(auth()->id());
+    } else {
+        // Si on veut afficher uniquement les devoirs cachés
+        $query->whereHas('hiddenByUsers', function ($q) {
+            $q->where('user_id', auth()->id());
+        });
+    }
 
     // Filtrer par statut
     match ($this->filter) {
@@ -61,21 +72,25 @@ $subjects = computed(function () {
 });
 
 /**
- * Marquer un devoir comme complété/non complété
- */
-$toggleCompleted = function (int $homeworkId) {
-    $homework = Event::findOrFail($homeworkId);
-    $homework->completed = ! $homework->completed;
-    $homework->updated_by = auth()->id();
-    $homework->save();
-};
-
-/**
  * Supprimer un devoir
  */
 $delete = function (int $homeworkId) {
     $homework = Event::findOrFail($homeworkId);
     $homework->delete();
+};
+
+/**
+ * Cacher/afficher un devoir pour l'utilisateur actuel
+ */
+$toggleHidden = function (int $homeworkId) {
+    $homework = Event::findOrFail($homeworkId);
+    $user = auth()->user();
+
+    if ($user->hiddenEvents()->where('event_id', $homeworkId)->exists()) {
+        $user->hiddenEvents()->detach($homeworkId);
+    } else {
+        $user->hiddenEvents()->attach($homeworkId);
+    }
 };
 
 /**
@@ -102,7 +117,14 @@ $resetFilters = function () {
         </div>
 
         {{-- Action d'ajout --}}
-        <div>
+        <div class="flex gap-2">
+            <flux:button
+                wire:click="$toggle('showHidden')"
+                variant="outline"
+                icon="{{ $showHidden ? 'eye' : 'eye-slash' }}"
+            >
+                {{ $showHidden ? 'Voir les devoirs actifs' : 'Voir les devoirs cachés' }}
+            </flux:button>
             <flux:button href="{{ route('homeworks.create') }}" icon="plus">
                 Ajouter un devoir
             </flux:button>
@@ -171,11 +193,11 @@ $resetFilters = function () {
             >
                 <div class="flex items-start justify-between gap-4">
                     <div class="flex items-start gap-4 flex-1">
-                        {{-- Checkbox pour marquer comme complété --}}
+                        {{-- Checkbox pour cacher le devoir --}}
                         <div class="pt-1">
                             <flux:checkbox
-                                wire:click="toggleCompleted({{ $homework->id }})"
-                                :checked="$homework->completed"
+                                wire:click="toggleHidden({{ $homework->id }})"
+                                :checked="auth()->user()->hiddenEvents->contains($homework->id)"
                             />
                         </div>
 
@@ -267,13 +289,13 @@ $resetFilters = function () {
                 </svg>
                 <flux:heading size="lg" class="mt-4 mb-2">Aucun devoir trouvé</flux:heading>
                 <flux:text>
-                    @if ($search || $filter !== 'all' || $selectedSubject || $selectedPriority)
+                    @if ($search || $filter !== 'all' || $selectedSubject)
                         Aucun devoir ne correspond à vos critères de recherche.
                     @else
                         Commencez par ajouter votre premier devoir.
                     @endif
                 </flux:text>
-                @if (!$search && $filter === 'all' && !$selectedSubject && !$selectedPriority)
+                @if (!$search && $filter === 'all' && !$selectedSubject)
                     <flux:button href="{{ route('homeworks.create') }}" class="mt-4">
                         Ajouter un devoir
                     </flux:button>

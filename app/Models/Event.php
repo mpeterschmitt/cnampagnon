@@ -110,6 +110,15 @@ class Event extends Model
     }
 
     /**
+     * Relation : Utilisateurs qui ont caché cet événement
+     */
+    public function hiddenByUsers(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'event_user_hidden')
+            ->withTimestamps();
+    }
+
+    /**
      * Scope : Filtrer par type d'événement
      */
     public function scopeOfType($query, string $type)
@@ -139,6 +148,20 @@ class Event extends Model
     public function scopeExams($query)
     {
         return $query->where('type', 'exam');
+    }
+
+    /**
+     * Scope : Exclure les événements cachés par l'utilisateur donné
+     */
+    public function scopeNotHiddenBy($query, ?int $userId = null)
+    {
+        if (! $userId) {
+            return $query;
+        }
+
+        return $query->whereDoesntHave('hiddenByUsers', function ($q) use ($userId) {
+            $q->where('user_id', $userId);
+        });
     }
 
     /**

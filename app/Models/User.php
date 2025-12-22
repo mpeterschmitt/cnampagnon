@@ -71,4 +71,13 @@ class User extends Authenticatable
             ->map(fn ($word) => Str::substr($word, 0, 1))
             ->implode('');
     }
+
+    /**
+     * Relation : Événements cachés par cet utilisateur
+     */
+    public function hiddenEvents(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Event::class, 'event_user_hidden')
+            ->withTimestamps();
+    }
 }

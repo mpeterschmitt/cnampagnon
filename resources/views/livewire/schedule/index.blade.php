@@ -83,6 +83,7 @@ $courses = computed(function () {
 
     return \App\Models\Event::query()
         ->courses()
+        ->notHiddenBy(auth()->id())
         ->betweenDates($startOfWeek, $endOfWeek)
         ->forSubject($this->selectedSubject)
         ->forTeacher($this->selectedTeacher)
@@ -100,6 +101,7 @@ $monthCourses = computed(function () {
 
     return \App\Models\Event::query()
         ->courses()
+        ->notHiddenBy(auth()->id())
         ->betweenDates($startOfMonth, $endOfMonth)
         ->forSubject($this->selectedSubject)
         ->forTeacher($this->selectedTeacher)
@@ -117,6 +119,7 @@ $homeworks = computed(function () {
 
     return \App\Models\Event::query()
         ->homework()
+        ->notHiddenBy(auth()->id())
         ->betweenDates($startOfWeek, $endOfWeek)
         ->forSubject($this->selectedSubject)
         ->orderBy('due_date')
@@ -132,6 +135,7 @@ $monthHomeworks = computed(function () {
 
     return \App\Models\Event::query()
         ->homework()
+        ->notHiddenBy(auth()->id())
         ->betweenDates($startOfMonth, $endOfMonth)
         ->forSubject($this->selectedSubject)
         ->orderBy('due_date')
@@ -147,6 +151,7 @@ $exams = computed(function () {
 
     return \App\Models\Event::query()
         ->exams()
+        ->notHiddenBy(auth()->id())
         ->betweenDates($startOfWeek, $endOfWeek)
         ->forSubject($this->selectedSubject)
         ->orderBy('start_time')
@@ -162,6 +167,7 @@ $monthExams = computed(function () {
 
     return \App\Models\Event::query()
         ->exams()
+        ->notHiddenBy(auth()->id())
         ->betweenDates($startOfMonth, $endOfMonth)
         ->forSubject($this->selectedSubject)
         ->orderBy('start_time')
@@ -177,6 +183,7 @@ $dayCourses = computed(function () {
 
     return \App\Models\Event::query()
         ->courses()
+        ->notHiddenBy(auth()->id())
         ->betweenDates($startOfDay, $endOfDay)
         ->forSubject($this->selectedSubject)
         ->forTeacher($this->selectedTeacher)
@@ -194,6 +201,7 @@ $dayHomeworks = computed(function () {
 
     return \App\Models\Event::query()
         ->homework()
+        ->notHiddenBy(auth()->id())
         ->betweenDates($startOfDay, $endOfDay)
         ->forSubject($this->selectedSubject)
         ->orderBy('due_date')
@@ -209,6 +217,7 @@ $dayExams = computed(function () {
 
     return \App\Models\Event::query()
         ->exams()
+        ->notHiddenBy(auth()->id())
         ->betweenDates($startOfDay, $endOfDay)
         ->forSubject($this->selectedSubject)
         ->orderBy('start_time')
