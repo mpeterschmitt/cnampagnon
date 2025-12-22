@@ -7,10 +7,9 @@ use Illuminate\Validation\Rule;
 use function Livewire\Volt\{computed, layout, state, rules};
 
 /**
- * Composant de gestion des liens de redirection (Admin)
+ * {{ __('Redirect links management component (Admin)') }}
  *
- * Permet aux administrateurs de créer et gérer des liens courts
- * accessibles via /s/{code}
+ * {{ __('Allows administrators to create and manage short links accessible via /s/{code}') }}
  */
 layout("components.layouts.app");
 
@@ -163,11 +162,11 @@ $save = function () {
     if ($this->editingId) {
         $redirect = Redirect::findOrFail($this->editingId);
         $redirect->update($data);
-        $message = "Le lien de redirection a été mis à jour avec succès.";
+        $message = __('The redirect link has been successfully updated.');
     } else {
         $data["created_by"] = auth()->id();
         Redirect::create($data);
-        $message = "Le lien de redirection a été créé avec succès.";
+        $message = __('The redirect link has been successfully created.');
     }
 
     $this->closeModal();
@@ -181,8 +180,8 @@ $toggleStatus = function ($redirectId) {
     $redirect = Redirect::findOrFail($redirectId);
     $redirect->update(["is_active" => !$redirect->is_active]);
 
-    $status = $redirect->is_active ? "activé" : "désactivé";
-    $this->dispatch("success", message: "Le lien a été {$status}.");
+    $status = $redirect->is_active ? __('activated') : __('deactivated');
+    $this->dispatch("success", message: __('The link has been :status.', ['status' => $status]));
 };
 
 /**
@@ -193,7 +192,7 @@ $deleteRedirect = function ($redirectId) {
     $code = $redirect->code;
     $redirect->delete();
 
-    $this->dispatch("success", message: "Le lien '{$code}' a été supprimé.");
+    $this->dispatch("success", message: __('The link \':code\' has been deleted.', ['code' => $code]));
 };
 
 /**
@@ -286,7 +285,7 @@ $clickDetails = computed(function () {
              const url = window.location.origin + '/s/' + code;
              navigator.clipboard.writeText(url).then(() => {
                  this.showNotification = true;
-                 this.notificationMessage = 'Lien copié dans le presse-papier !';
+                 this.notificationMessage = '{{ __("Link copied to clipboard!") }}';
                  this.notificationType = 'success';
                  setTimeout(() => { this.showNotification = false; }, 3000);
              });
@@ -342,30 +341,30 @@ $clickDetails = computed(function () {
             <div class="space-y-6 p-6">
                 <div>
                     <flux:heading size="lg">
-                        {{ $editingId ? 'Modifier le lien de redirection' : 'Créer un nouveau lien' }}
+                        {{ $editingId ? __('Edit redirect link') : __('Create a new link') }}
                     </flux:heading>
                 </div>
 
                 <flux:field>
-                    <flux:label>Code du lien court *</flux:label>
+                    <flux:label>{{ __('Short link code') }} *</flux:label>
                     <div class="flex gap-2">
                         <flux:input
                             wire:model="form.code"
-                            placeholder="mon-lien"
+                            placeholder="{{ __('my-link') }}"
                             class="flex-1"
                         />
                         <flux:button type="button" wire:click="generateRandomCode" variant="ghost">
-                            Aléatoire
+                            {{ __('Random') }}
                         </flux:button>
                     </div>
                     <flux:text class="text-sm text-zinc-500">
-                        Lettres, chiffres, tirets et underscores uniquement. Le lien sera : /s/{{ $form['code'] ?? 'code' }}
+                        {{ __('Letters, numbers, dashes and underscores only. The link will be: /s/:code', ['code' => $form['code'] ?? 'code']) }}
                     </flux:text>
                     <flux:error name="form.code" />
                 </flux:field>
 
                 <flux:field>
-                    <flux:label>URL de destination *</flux:label>
+                    <flux:label>{{ __('Destination URL') }} *</flux:label>
                     <flux:input
                         wire:model="form.url"
                         placeholder="https://example.com/page"
@@ -375,19 +374,19 @@ $clickDetails = computed(function () {
                 </flux:field>
 
                 <flux:field>
-                    <flux:label>Titre (optionnel)</flux:label>
+                    <flux:label>{{ __('Title (optional)') }}</flux:label>
                     <flux:input
                         wire:model="form.title"
-                        placeholder="Description courte du lien"
+                        placeholder="{{ __('Short description of the link') }}"
                     />
                     <flux:error name="form.title" />
                 </flux:field>
 
                 <flux:field>
-                    <flux:label>Description (optionnel)</flux:label>
+                    <flux:label>{{ __('Description (optional)') }}</flux:label>
                     <flux:textarea
                         wire:model="form.description"
-                        placeholder="Description détaillée..."
+                        placeholder="{{ __('Detailed description...') }}"
                         rows="3"
                     />
                     <flux:error name="form.description" />
@@ -395,20 +394,20 @@ $clickDetails = computed(function () {
 
                 <flux:field>
                     <flux:checkbox wire:model="form.is_active">
-                        <flux:label>Actif</flux:label>
+                        <flux:label>{{ __('Active') }}</flux:label>
                     </flux:checkbox>
                     <flux:text class="text-sm text-zinc-500">
-                        Les liens inactifs ne redirigent pas
+                        {{ __('Inactive links do not redirect') }}
                     </flux:text>
                 </flux:field>
             </div>
 
             <div class="flex items-center justify-end gap-3 border-t border-zinc-200 p-6 dark:border-zinc-700">
                 <flux:button type="button" wire:click="closeModal" variant="ghost">
-                    Annuler
+                    {{ __('Cancel') }}
                 </flux:button>
                 <flux:button type="submit" variant="primary">
-                    {{ $editingId ? 'Mettre à jour' : 'Créer' }}
+                    {{ $editingId ? __('Update') : __('Create') }}
                 </flux:button>
             </div>
         </form>
@@ -420,7 +419,7 @@ $clickDetails = computed(function () {
             <div class="space-y-6 p-6">
                 <div>
                     <flux:heading size="lg">
-                        Statistiques de clics : /s/{{ $this->clickDetails['redirect']->code }}
+                        {{ __('Click statistics: /s/:code', ['code' => $this->clickDetails['redirect']->code]) }}
                     </flux:heading>
                     <flux:text class="mt-1 text-zinc-600 dark:text-zinc-400">
                         {{ $this->clickDetails['redirect']->title ?: $this->clickDetails['redirect']->url }}
@@ -431,7 +430,7 @@ $clickDetails = computed(function () {
                 <div class="grid gap-4 sm:grid-cols-3">
                     <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800">
                         <flux:text class="text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                            Total Clics
+                            {{ __('Total Clicks') }}
                         </flux:text>
                         <flux:heading size="lg" class="mt-1 text-2xl font-bold">
                             {{ $this->clickDetails['redirect']->clicks }}
@@ -440,7 +439,7 @@ $clickDetails = computed(function () {
 
                     <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800">
                         <flux:text class="text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                            Utilisateurs Uniques
+                            {{ __('Unique Users') }}
                         </flux:text>
                         <flux:heading size="lg" class="mt-1 text-2xl font-bold text-blue-600 dark:text-blue-400">
                             {{ $this->clickDetails['unique_users'] }}
@@ -449,7 +448,7 @@ $clickDetails = computed(function () {
 
                     <div class="rounded-lg border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-800">
                         <flux:text class="text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                            Clics Anonymes
+                            {{ __('Anonymous Clicks') }}
                         </flux:text>
                         <flux:heading size="lg" class="mt-1 text-2xl font-bold text-orange-600 dark:text-orange-400">
                             {{ $this->clickDetails['anonymous_clicks'] }}
@@ -460,7 +459,7 @@ $clickDetails = computed(function () {
                 {{-- Liste des clics récents --}}
                 <div>
                     <flux:heading size="sm" class="mb-3">
-                        Clics récents (100 derniers)
+                        {{ __('Recent clicks (last 100)') }}
                     </flux:heading>
 
                     <div class="max-h-96 overflow-y-auto rounded-lg border border-zinc-200 dark:border-zinc-700">
@@ -468,16 +467,16 @@ $clickDetails = computed(function () {
                             <thead class="sticky top-0 border-b border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
                             <tr>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                                    Date/Heure
+                                    {{ __('Date/Time') }}
                                 </th>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                                    Utilisateur
+                                    {{ __('User') }}
                                 </th>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                                    Adresse IP
+                                    {{ __('IP Address') }}
                                 </th>
                                 <th class="px-4 py-2 text-left text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                                    Navigateur
+                                    {{ __('Browser') }}
                                 </th>
                             </tr>
                             </thead>
@@ -508,7 +507,7 @@ $clickDetails = computed(function () {
                                                 </div>
                                             </div>
                                         @else
-                                            <flux:badge variant="ghost" size="sm">Anonyme</flux:badge>
+                                            <flux:badge variant="ghost" size="sm">{{ __('Anonymous') }}</flux:badge>
                                         @endif
                                     </td>
                                     <td class="px-4 py-3 text-sm text-zinc-600 dark:text-zinc-400">
@@ -520,7 +519,7 @@ $clickDetails = computed(function () {
                                         </div>
                                         @if($click->referer)
                                             <div class="mt-1 max-w-xs truncate text-xs text-zinc-500" title="Referrer: {{ $click->referer }}">
-                                                De: {{ parse_url($click->referer, PHP_URL_HOST) }}
+                                                {{ __('From:') }} {{ parse_url($click->referer, PHP_URL_HOST) }}
                                             </div>
                                         @endif
                                     </td>
@@ -528,7 +527,7 @@ $clickDetails = computed(function () {
                             @empty
                                 <tr>
                                     <td colspan="4" class="px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                                        Aucun clic enregistré
+                                        {{ __('No clicks recorded') }}
                                     </td>
                                 </tr>
                             @endforelse
@@ -540,7 +539,7 @@ $clickDetails = computed(function () {
 
             <div class="flex items-center justify-end border-t border-zinc-200 p-6 dark:border-zinc-700">
                 <flux:button wire:click="closeClicksModal" variant="ghost">
-                    Fermer
+                    {{ __('Close') }}
                 </flux:button>
             </div>
         @endif
@@ -550,15 +549,15 @@ $clickDetails = computed(function () {
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <flux:heading size="xl" class="text-2xl font-semibold">
-                Liens de Redirection
+                {{ __('Redirect Links') }}
             </flux:heading>
             <flux:text class="mt-1 text-zinc-600 dark:text-zinc-400">
-                Gérer les liens courts /s/{code}
+                {{ __('Manage short links /s/{code}') }}
             </flux:text>
         </div>
 
         <flux:button wire:click="openCreateModal" variant="primary" icon="plus">
-            Nouveau lien
+            {{ __('New link') }}
         </flux:button>
     </div>
 
@@ -567,7 +566,7 @@ $clickDetails = computed(function () {
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
             <flux:text class="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                Total Liens
+                {{ __('Total Links') }}
             </flux:text>
             <flux:heading size="lg" class="mt-2 text-3xl font-bold">
                 {{ $this->stats['total'] }}
@@ -576,7 +575,7 @@ $clickDetails = computed(function () {
 
         <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
             <flux:text class="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                Actifs
+                {{ __('Active') }}
             </flux:text>
             <flux:heading size="lg" class="mt-2 text-3xl font-bold text-green-600 dark:text-green-400">
                 {{ $this->stats['active'] }}
@@ -585,7 +584,7 @@ $clickDetails = computed(function () {
 
         <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
             <flux:text class="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                Inactifs
+                {{ __('Inactive') }}
             </flux:text>
             <flux:heading size="lg" class="mt-2 text-3xl font-bold text-red-600 dark:text-red-400">
                 {{ $this->stats['inactive'] }}
@@ -594,7 +593,7 @@ $clickDetails = computed(function () {
 
         <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
             <flux:text class="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                Total Clics
+                {{ __('Total Clicks') }}
             </flux:text>
             <flux:heading size="lg" class="mt-2 text-3xl font-bold text-blue-600 dark:text-blue-400">
                 {{ number_format($this->stats['total_clicks']) }}
@@ -608,10 +607,10 @@ $clickDetails = computed(function () {
         <div class="grid gap-4 sm:grid-cols-3">
             <div class="sm:col-span-2">
                 <flux:field>
-                    <flux:label>Rechercher</flux:label>
+                    <flux:label>{{ __('Search') }}</flux:label>
                     <flux:input
                         wire:model.live.debounce.300ms="search"
-                        placeholder="Code, URL, titre..."
+                        placeholder="{{ __('Code, URL, title...') }}"
                         icon="magnifying-glass"
                     />
                 </flux:field>
@@ -619,11 +618,11 @@ $clickDetails = computed(function () {
 
             <div>
                 <flux:field>
-                    <flux:label>Filtrer par statut</flux:label>
+                    <flux:label>{{ __('Filter by status') }}</flux:label>
                     <flux:select wire:model.live="filterStatus">
-                        <option value="all">Tous les liens</option>
-                        <option value="active">Actifs uniquement</option>
-                        <option value="inactive">Inactifs uniquement</option>
+                        <option value="all">{{ __('All links') }}</option>
+                        <option value="active">{{ __('Active only') }}</option>
+                        <option value="inactive">{{ __('Inactive only') }}</option>
                     </flux:select>
                 </flux:field>
             </div>
@@ -638,7 +637,7 @@ $clickDetails = computed(function () {
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                         <button wire:click="changeSortBy('code')" class="flex items-center gap-1 hover:text-zinc-700 dark:hover:text-zinc-300">
-                            Code
+                            {{ __('Code') }}
                             @if($sortBy === 'code')
                                 @if($sortDirection === 'asc')
                                     <flux:icon.chevron-up class="size-4" />
@@ -649,12 +648,12 @@ $clickDetails = computed(function () {
                         </button>
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                        Destination
+                        {{ __('Destination') }}
                     </th>
                     @if(auth()->user()->isAdmin())
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                         <button wire:click="changeSortBy('clicks')" class="flex items-center gap-1 hover:text-zinc-700 dark:hover:text-zinc-300">
-                            Clics
+                            {{ __('Clicks') }}
                             @if($sortBy === 'clicks')
                                 @if($sortDirection === 'asc')
                                     <flux:icon.chevron-up class="size-4" />
@@ -666,11 +665,11 @@ $clickDetails = computed(function () {
                     </th>
                     @endif
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                        Statut
+                        {{ __('Status') }}
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                         <button wire:click="changeSortBy('created_at')" class="flex items-center gap-1 hover:text-zinc-700 dark:hover:text-zinc-300">
-                            Créé le
+                            {{ __('Created at') }}
                             @if($sortBy === 'created_at')
                                 @if($sortDirection === 'asc')
                                     <flux:icon.chevron-up class="size-4" />
@@ -681,7 +680,7 @@ $clickDetails = computed(function () {
                         </button>
                     </th>
                     <th class="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                        Actions
+                        {{ __('Actions') }}
                     </th>
                 </tr>
                 </thead>
@@ -696,7 +695,7 @@ $clickDetails = computed(function () {
                                 <button
                                     wire:click="copyLink('{{ $redirect->code }}')"
                                     class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300"
-                                    title="Copier le lien">
+                                    title="{{ __('Copy link') }}">
                                     <flux:icon.clipboard class="size-4" />
                                 </button>
                             </div>
@@ -716,7 +715,7 @@ $clickDetails = computed(function () {
                             <button
                                 wire:click="viewClicks({{ $redirect->id }})"
                                 class="cursor-pointer transition-colors hover:opacity-75"
-                                title="Voir les détails">
+                                title="{{ __('View details') }}">
                                 <flux:badge variant="ghost" size="sm">
                                     {{ number_format($redirect->clicks) }}
                                 </flux:badge>
@@ -726,11 +725,11 @@ $clickDetails = computed(function () {
                         <td class="px-6 py-4">
                             @if($redirect->is_active)
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                    Actif
+                                    {{ __('Active') }}
                                 </span>
                             @else
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                                    Inactif
+                                    {{ __('Inactive') }}
                                 </span>
                             @endif
                         </td>
@@ -750,7 +749,7 @@ $clickDetails = computed(function () {
                                     variant="ghost"
                                     size="sm"
                                     icon="chart-bar"
-                                    title="Voir les statistiques">
+                                    title="{{ __('View statistics') }}">
                                 </flux:button>
                                 @endif
                                 <flux:button
@@ -758,13 +757,13 @@ $clickDetails = computed(function () {
                                     variant="ghost"
                                     size="sm"
                                     icon="pencil"
-                                    title="Modifier">
+                                    title="{{ __('Edit') }}">
                                 </flux:button>
                                 <flux:button
                                     wire:click="toggleStatus({{ $redirect->id }})"
                                     variant="ghost"
                                     size="sm"
-                                    title="{{ $redirect->is_active ? 'Désactiver' : 'Activer' }}">
+                                    title="{{ $redirect->is_active ? __('Deactivate') : __('Activate') }}">
                                     @if($redirect->is_active)
                                         <flux:icon.eye-slash class="size-4" />
                                     @else
@@ -773,11 +772,11 @@ $clickDetails = computed(function () {
                                 </flux:button>
                                 <flux:button
                                     wire:click="deleteRedirect({{ $redirect->id }})"
-                                    wire:confirm="Êtes-vous sûr de vouloir supprimer ce lien ?"
+                                    wire:confirm="{{ __('Are you sure you want to delete this link?') }}"
                                     variant="ghost"
                                     size="sm"
                                     icon="trash"
-                                    title="Supprimer">
+                                    title="{{ __('Delete') }}">
                                 </flux:button>
                             </div>
                         </td>
@@ -788,11 +787,11 @@ $clickDetails = computed(function () {
                             <div class="flex flex-col items-center gap-2">
                                 <flux:icon.link class="size-12 text-zinc-300 dark:text-zinc-600" />
                                 <flux:text class="text-zinc-500 dark:text-zinc-400">
-                                    Aucun lien de redirection trouvé
+                                    {{ __('No redirect links found') }}
                                 </flux:text>
                                 @if($search || $filterStatus !== 'all')
                                     <flux:button wire:click="$set('search', ''); $set('filterStatus', 'all')" variant="ghost" size="sm">
-                                        Réinitialiser les filtres
+                                        {{ __('Reset filters') }}
                                     </flux:button>
                                 @endif
                             </div>

@@ -17,18 +17,18 @@ state(['sharepointUrl' => 'https://cfaiformation-my.sharepoint.com/:f:/g/persona
                 <!-- Badge -->
                 <div class="mb-8 flex justify-center">
                     <flux:badge variant="outline" class="rounded-full">
-                        🎓 Plateforme CNAM Promo
+                        {{ __('🎓 CNAM Promo Platform') }}
                     </flux:badge>
                 </div>
 
                 <!-- Title -->
                 <flux:heading size="xl" class="mb-6 text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
-                    Bienvenue sur la plateforme de promotion
+                    {{ __('Welcome to the promotion platform') }}
                 </flux:heading>
 
                 <!-- Subtitle -->
                 <flux:text class="mx-auto mb-10 max-w-xl text-lg text-zinc-600 dark:text-zinc-400">
-                    Votre espace dédié pour collaborer, partager et rester connecté avec votre promotion d'ingénieurs du CNAM.
+                    {{ __('Your dedicated space to collaborate, share and stay connected with your CNAM engineering class.') }}
                 </flux:text>
 
                 <!-- CTA Buttons -->
@@ -39,7 +39,7 @@ state(['sharepointUrl' => 'https://cfaiformation-my.sharepoint.com/:f:/g/persona
                         target="_blank"
                         icon="arrow-right"
                     >
-                        Accéder à SharePoint
+                        {{ __('Access SharePoint') }}
                     </flux:button>
 
                     @auth
@@ -48,7 +48,7 @@ state(['sharepointUrl' => 'https://cfaiformation-my.sharepoint.com/:f:/g/persona
                             :href="route('schedule.index')"
                             wire:navigate
                         >
-                            Voir mon emploi du temps
+                            {{ __('View my schedule') }}
                         </flux:button>
                     @endauth
 
@@ -58,7 +58,7 @@ state(['sharepointUrl' => 'https://cfaiformation-my.sharepoint.com/:f:/g/persona
                             :href="route('register')"
                             wire:navigate
                         >
-                            S'inscrire
+                            {{ __('Sign up') }}
                         </flux:button>
                     @endguest
                 </div>
