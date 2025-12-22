@@ -56,8 +56,6 @@ $stats = computed(function () {
     return [
         'total' => User::count(),
         'admins' => User::where('is_admin', true)->count(),
-        'verified' => User::whereNotNull('email_verified_at')->count(),
-        'pending' => User::whereNull('email_verified_at')->count(),
     ];
 });
 
@@ -116,23 +114,6 @@ $deleteUser = function ($userId) {
     $this->dispatch('success', message: "L'utilisateur {$userName} a été supprimé.");
 };
 
-/**
- * Action pour renvoyer l'email de vérification
- */
-$resendVerification = function ($userId) {
-    $user = User::findOrFail($userId);
-
-    if ($user->email_verified_at) {
-        $this->dispatch('error', message: 'Ce compte est déjà vérifié.');
-
-        return;
-    }
-
-    // Envoyer l'email de vérification
-    $user->sendEmailVerificationNotification();
-
-    $this->dispatch('success', message: "Email de vérification envoyé à {$user->email}.");
-};
 
 /**
  * Action pour changer le tri
@@ -213,7 +194,7 @@ $changeSortBy = function ($column) {
     </div>
 
     {{-- Statistiques --}}
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="grid gap-4 sm:grid-cols-2">
         <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
             <flux:text class="text-sm font-medium text-zinc-600 dark:text-zinc-400">
                 Total Utilisateurs
@@ -229,24 +210,6 @@ $changeSortBy = function ($column) {
             </flux:text>
             <flux:heading size="lg" class="mt-2 text-3xl font-bold text-amber-600 dark:text-amber-400">
                 {{ $this->stats['admins'] }}
-            </flux:heading>
-        </div>
-
-        <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
-            <flux:text class="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                Comptes Vérifiés
-            </flux:text>
-            <flux:heading size="lg" class="mt-2 text-3xl font-bold text-green-600 dark:text-green-400">
-                {{ $this->stats['verified'] }}
-            </flux:heading>
-        </div>
-
-        <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
-            <flux:text class="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                En Attente
-            </flux:text>
-            <flux:heading size="lg" class="mt-2 text-3xl font-bold text-orange-600 dark:text-orange-400">
-                {{ $this->stats['pending'] }}
             </flux:heading>
         </div>
     </div>
@@ -314,9 +277,6 @@ $changeSortBy = function ($column) {
                         Rôle
                     </th>
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                        Statut
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                         <button wire:click="changeSortBy('created_at')" class="flex items-center gap-1 hover:text-zinc-700 dark:hover:text-zinc-300">
                             Inscription
                             @if($sortBy === 'created_at')
@@ -365,17 +325,6 @@ $changeSortBy = function ($column) {
                             @endif
                         </td>
                         <td class="whitespace-nowrap px-6 py-4">
-                            @if($user->email_verified_at)
-                                <flux:badge color="green" size="sm" icon="check-circle">
-                                    Vérifié
-                                </flux:badge>
-                            @else
-                                <flux:badge color="orange" size="sm" icon="exclamation-circle">
-                                    En attente
-                                </flux:badge>
-                            @endif
-                        </td>
-                        <td class="whitespace-nowrap px-6 py-4">
                             <flux:text class="text-sm text-zinc-600 dark:text-zinc-400">
                                 {{ $user->created_at->format('d/m/Y') }}
                             </flux:text>
@@ -396,12 +345,6 @@ $changeSortBy = function ($column) {
                                     @else
                                         <flux:menu.item icon="shield-exclamation" wire:click="toggleAdmin({{ $user->id }})">
                                             Révoquer admin
-                                        </flux:menu.item>
-                                    @endif
-
-                                    @if(!$user->email_verified_at)
-                                        <flux:menu.item icon="envelope" wire:click="resendVerification({{ $user->id }})">
-                                            Renvoyer email
                                         </flux:menu.item>
                                     @endif
 

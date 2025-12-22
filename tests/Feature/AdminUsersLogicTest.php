@@ -13,14 +13,13 @@ use Livewire\Volt\Volt;
 test('admin users page displays correct statistics', function () {
     // Créer quelques utilisateurs
     User::factory()->admin()->count(2)->create();
-    User::factory()->count(5)->create(['email_verified_at' => now()]);
-    User::factory()->count(3)->create(['email_verified_at' => null]);
+    User::factory()->count(8)->create();
 
     $admin = User::factory()->admin()->create();
 
     $this->actingAs($admin)
         ->get(route('admin.users'))
-        ->assertSee('11') // Total (2+5+3+1)
+        ->assertSee('11') // Total (2+8+1)
         ->assertSee('3'); // Admins (2+1)
 });
 

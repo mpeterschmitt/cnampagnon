@@ -31,7 +31,7 @@
             <flux:spacer />
 
             <flux:navlist variant="outline">
-                <flux:navlist.item icon="folder-git-2" href="https://github.com/mpeterschmitt/cnampagnon" target="_blank">
+                <flux:navlist.item icon="folder-git-2" href="https://git.unurled.me/unurled/cnampagnon" target="_blank">
                 {{ __('Repository') }}
                 </flux:navlist.item>
             </flux:navlist>
