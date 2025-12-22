@@ -15,13 +15,13 @@
                 <flux:navlist.group :heading="__('Platform')" class="grid">
                     <flux:navlist.item icon="calendar" :href="route('schedule.index')" :current="request()->routeIs('schedule.*')" wire:navigate>{{ __('Emploi du Temps') }}</flux:navlist.item>
                     <flux:navlist.item icon="document-text" :href="route('homeworks.index')" :current="request()->routeIs('homeworks.*')" wire:navigate>{{ __('Devoirs') }}</flux:navlist.item>
+                    <flux:navlist.item icon="link" :href="route('admin.redirects')" :current="request()->routeIs('admin.redirects')" wire:navigate>{{ __('Redirections') }}</flux:navlist.item>
                     <flux:navlist.item icon="folder-open" :href="'https://cfaiformation-my.sharepoint.com/:f:/g/personal/mpeterschmitt1_cfai-formation_fr/IgCQi66vpvSuQYqwjkeLu-y6AQrTZlwBRuAxePu5FaaKPb0?e=P1wHXG'" target="_blank">{{ __('SharePoint') }}</flux:navlist.item>
                 </flux:navlist.group>
 
                 @if(auth()->user()->isAdmin())
                     <flux:navlist.group :heading="__('Administration')" class="grid">
                         <flux:navlist.item icon="users" :href="route('admin.users')" :current="request()->routeIs('admin.users')" wire:navigate>{{ __('Utilisateurs') }}</flux:navlist.item>
-                        <flux:navlist.item icon="link" :href="route('admin.redirects')" :current="request()->routeIs('admin.redirects')" wire:navigate>{{ __('Redirections') }}</flux:navlist.item>
                         <flux:navlist.item icon="document-arrow-up" :href="route('admin.import-ics')" :current="request()->routeIs('admin.import-ics')" wire:navigate>{{ __('Import ICS') }}</flux:navlist.item>
                         <flux:navlist.item icon="document-text" :href="route('admin.import-pdf')" :current="request()->routeIs('admin.import-pdf')" wire:navigate>{{ __('Import PDF') }}</flux:navlist.item>
                     </flux:navlist.group>

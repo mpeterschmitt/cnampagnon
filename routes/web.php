@@ -54,6 +54,9 @@ Route::middleware(['auth'])->group(function () {
             ),
         )
         ->name('two-factor.show');
+
+    // Route pour les redirections de liens (accessible à tous les utilisateurs authentifiés)
+    Volt::route('redirects', 'admin.redirects')->name('admin.redirects');
 });
 
 // Routes administrateur (protégées par middleware admin)
@@ -61,7 +64,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::redirect('/', 'admin/users');
 
     Volt::route('users', 'admin.users')->name('admin.users');
-    Volt::route('redirects', 'admin.redirects')->name('admin.redirects');
     Volt::route('import-ics', 'admin.import-ics')->name('admin.import-ics');
     Volt::route('import-pdf', 'admin.import-pdf')->name('admin.import-pdf');
 });

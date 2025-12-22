@@ -562,6 +562,7 @@ $clickDetails = computed(function () {
         </flux:button>
     </div>
 
+    @if(auth()->user()->isAdmin())
     {{-- Statistiques --}}
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
@@ -600,6 +601,7 @@ $clickDetails = computed(function () {
             </flux:heading>
         </div>
     </div>
+    @endif
 
     {{-- Filtres et recherche --}}
     <div class="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
@@ -649,6 +651,7 @@ $clickDetails = computed(function () {
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                         Destination
                     </th>
+                    @if(auth()->user()->isAdmin())
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                         <button wire:click="changeSortBy('clicks')" class="flex items-center gap-1 hover:text-zinc-700 dark:hover:text-zinc-300">
                             Clics
@@ -661,6 +664,7 @@ $clickDetails = computed(function () {
                             @endif
                         </button>
                     </th>
+                    @endif
                     <th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                         Statut
                     </th>
@@ -707,6 +711,7 @@ $clickDetails = computed(function () {
                                 {{ $redirect->url }}
                             </div>
                         </td>
+                        @if(auth()->user()->isAdmin())
                         <td class="px-6 py-4">
                             <button
                                 wire:click="viewClicks({{ $redirect->id }})"
@@ -717,6 +722,7 @@ $clickDetails = computed(function () {
                                 </flux:badge>
                             </button>
                         </td>
+                        @endif
                         <td class="px-6 py-4">
                             @if($redirect->is_active)
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
@@ -738,6 +744,7 @@ $clickDetails = computed(function () {
                         </td>
                         <td class="px-6 py-4 text-right">
                             <div class="flex items-center justify-end gap-2">
+                                @if(auth()->user()->isAdmin())
                                 <flux:button
                                     wire:click="viewClicks({{ $redirect->id }})"
                                     variant="ghost"
@@ -745,6 +752,7 @@ $clickDetails = computed(function () {
                                     icon="chart-bar"
                                     title="Voir les statistiques">
                                 </flux:button>
+                                @endif
                                 <flux:button
                                     wire:click="openEditModal({{ $redirect->id }})"
                                     variant="ghost"
