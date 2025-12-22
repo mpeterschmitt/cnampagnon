@@ -342,3 +342,94 @@ test('month view updates period label in sections', function () {
         ->call('toggleViewMode', 'month')
         ->assertSee('Devoirs du mois');
 });
+
+// Test de la vue journalière
+test('user can switch to day view', function () {
+    $user = User::factory()->create();
+
+    Volt::actingAs($user)
+        ->test('schedule.index')
+        ->call('toggleViewMode', 'day')
+        ->assertSet('viewMode', 'day')
+        ->assertSee('Planning journalier des cours et activités');
+});
+
+test('user can navigate to previous day', function () {
+    $user = User::factory()->create();
+
+    $previousDay = now()->startOfDay()->subDay();
+
+    Volt::actingAs($user)
+        ->test('schedule.index')
+        ->call('toggleViewMode', 'day')
+        ->call('previousDay')
+        ->assertSee($previousDay->isoFormat('dddd D MMMM YYYY'));
+});
+
+test('user can navigate to next day', function () {
+    $user = User::factory()->create();
+
+    $nextDay = now()->startOfDay()->addDay();
+
+    Volt::actingAs($user)
+        ->test('schedule.index')
+        ->call('toggleViewMode', 'day')
+        ->call('nextDay')
+        ->assertSee($nextDay->isoFormat('dddd D MMMM YYYY'));
+});
+
+test('user can return to current day', function () {
+    $user = User::factory()->create();
+
+    Volt::actingAs($user)
+        ->test('schedule.index')
+        ->call('toggleViewMode', 'day')
+        ->call('nextDay')
+        ->call('nextDay')
+        ->call('currentDay')
+        ->assertSee("Aujourd'hui");
+});
+
+test('day view displays events for selected day', function () {
+    $user = User::factory()->create();
+
+    $today = now()->startOfDay();
+    $courseStart = $today->copy()->setTime(10, 0);
+    $course = \App\Models\Event::factory()->course()->create([
+        'title' => 'Daily Course',
+        'start_time' => $courseStart,
+        'end_time' => $courseStart->copy()->addHours(2),
+    ]);
+
+    $homeworkDue = $today->copy()->setTime(14, 0);
+    $homework = \App\Models\Event::factory()->homework()->create([
+        'title' => 'Daily Homework',
+        'due_date' => $homeworkDue,
+        'start_time' => $homeworkDue->copy()->addMinute(),
+        'end_time' => $homeworkDue->copy()->addMinutes(2),
+    ]);
+
+    Volt::actingAs($user)
+        ->test('schedule.index')
+        ->call('toggleViewMode', 'day')
+        ->assertSee('Daily Course')
+        ->assertSee('Daily Homework');
+});
+
+test('day view updates period label in sections', function () {
+    $user = User::factory()->create();
+
+    $today = now()->startOfDay();
+    $homeworkDue = $today->copy()->setTime(14, 0);
+    $homework = \App\Models\Event::factory()->homework()->create([
+        'title' => 'Test Homework',
+        'due_date' => $homeworkDue,
+        'start_time' => $homeworkDue->copy()->addMinute(),
+        'end_time' => $homeworkDue->copy()->addMinutes(2),
+    ]);
+
+    Volt::actingAs($user)
+        ->test('schedule.index')
+        ->call('toggleViewMode', 'day')
+        ->assertSee('Devoirs du jour');
+});
