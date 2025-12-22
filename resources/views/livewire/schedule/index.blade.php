@@ -689,14 +689,7 @@ $createHomeworkAt = function ($date, $hour) {
 
                                 @if($isHomework)
                                     @php
-                                        $priorityColors = [
-                                            'high' => 'bg-red-100 border-red-400 text-red-900 dark:bg-red-950 dark:border-red-700 dark:text-red-200',
-                                            'medium' => 'bg-yellow-100 border-yellow-400 text-yellow-900 dark:bg-yellow-950 dark:border-yellow-700 dark:text-yellow-200',
-                                            'low' => 'bg-zinc-100 border-zinc-400 text-zinc-900 dark:bg-zinc-950 dark:border-zinc-700 dark:text-zinc-200',
-                                        ];
-                                        $colorClass = ($event->priority && isset($priorityColors[$event->priority]))
-                                            ? $priorityColors[$event->priority]
-                                            : $priorityColors['low'];
+                                        $colorClass = 'bg-zinc-100 border-zinc-400 text-zinc-900 dark:bg-zinc-950 dark:border-zinc-700 dark:text-zinc-200';
                                         $isOverdue = $event->due_date < now() && !$event->completed;
                                     @endphp
 
@@ -964,14 +957,7 @@ $createHomeworkAt = function ($date, $hour) {
 
                             @if($isHomework)
                                 @php
-                                    $priorityColors = [
-                                        'high' => 'bg-red-100 border-red-400 text-red-900 dark:bg-red-950 dark:border-red-700 dark:text-red-200',
-                                        'medium' => 'bg-yellow-100 border-yellow-400 text-yellow-900 dark:bg-yellow-950 dark:border-yellow-700 dark:text-yellow-200',
-                                        'low' => 'bg-zinc-100 border-zinc-400 text-zinc-900 dark:bg-zinc-950 dark:border-zinc-700 dark:text-zinc-200',
-                                    ];
-                                    $colorClass = ($event->priority && isset($priorityColors[$event->priority]))
-                                        ? $priorityColors[$event->priority]
-                                        : $priorityColors['low'];
+                                    $colorClass = 'bg-zinc-100 border-zinc-400 text-zinc-900 dark:bg-zinc-950 dark:border-zinc-700 dark:text-zinc-200';
                                     $isOverdue = $event->due_date < now() && !$event->completed;
                                 @endphp
 
@@ -1198,14 +1184,7 @@ $createHomeworkAt = function ($date, $hour) {
                         @if($dayDisplayedEvents < $maxDisplayedEvents)
                             @foreach($dayHomeworksFiltered->take($maxDisplayedEvents - $dayDisplayedEvents) as $homework)
                                 @php
-                                    $priorityColors = [
-                                        'high' => 'bg-red-500',
-                                        'medium' => 'bg-yellow-500',
-                                        'low' => 'bg-zinc-400',
-                                    ];
-                                    $colorClass = ($homework->priority && isset($priorityColors[$homework->priority]))
-                                        ? $priorityColors[$homework->priority]
-                                        : 'bg-zinc-400';
+                                    $colorClass = 'bg-zinc-400';
                                     $dayDisplayedEvents++;
                                 @endphp
 
@@ -1255,14 +1234,7 @@ $createHomeworkAt = function ($date, $hour) {
             <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach($displayHomeworks as $homework)
                     @php
-                        $priorityColors = [
-                            'high' => 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-950/30',
-                            'medium' => 'border-yellow-300 bg-yellow-50 dark:border-yellow-700 dark:bg-yellow-950/30',
-                            'low' => 'border-zinc-300 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900/30',
-                        ];
-                        $homeworkBorderClass = ($homework->priority && isset($priorityColors[$homework->priority]))
-                            ? $priorityColors[$homework->priority]
-                            : $priorityColors['low'];
+                        $homeworkBorderClass = 'border-zinc-300 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900/30';
                         $isOverdue = $homework->due_date < now() && !$homework->completed;
                     @endphp
 
@@ -1301,15 +1273,15 @@ $createHomeworkAt = function ($date, $hour) {
                                 </div>
                             @endif
 
-                            <div class="flex items-center gap-1">
-                                @if($homework->priority === 'high')
-                                    <flux:badge size="sm" color="red">Priorité élevée</flux:badge>
-                                @elseif($homework->priority === 'medium')
-                                    <flux:badge size="sm" color="yellow">Priorité moyenne</flux:badge>
-                                @else
-                                    <flux:badge size="sm" color="zinc">Priorité faible</flux:badge>
-                                @endif
-                            </div>
+                            @if($homework->delivery_method)
+                                <div class="flex items-center gap-1">
+                                    <svg class="size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                    <span>{{ $homework->delivery_method }}</span>
+                                </div>
+                            @endif
                         </div>
                     </a>
                 @endforeach

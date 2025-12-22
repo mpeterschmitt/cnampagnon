@@ -45,6 +45,7 @@ class Event extends Model
         'course_type',
         'room',
         'due_date',
+        'delivery_method',
         'priority',
         'completed',
         'color',

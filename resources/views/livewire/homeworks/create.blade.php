@@ -61,10 +61,9 @@ mount(function ($homework = null) {
         'subject' => $homework?->subject ?? $subjectFromQuery ?? '',
         'teacher' => $homework?->teacher ?? $teacherFromQuery ?? '',
         'due_date' => $homework?->due_date?->format('Y-m-d\TH:i') ?? $defaultDueDate,
-        'priority' => $homework?->priority ?? 'medium',
+        'delivery_method' => $homework?->delivery_method ?? '',
         'start_time' => $startTime,
         'end_time' => $endTime,
-        'location' => $homework?->location ?? '',
         'color' => $homework?->color ?? '#3b82f6',
     ];
 });
@@ -78,10 +77,9 @@ rules([
     'form.subject' => ['nullable', 'string', 'max:255'],
     'form.teacher' => ['nullable', 'string', 'max:255'],
     'form.due_date' => ['required', 'date'],
-    'form.priority' => ['required', 'in:low,medium,high'],
+    'form.delivery_method' => ['nullable', 'string', 'max:255'],
     'form.start_time' => ['nullable', 'date'],
     'form.end_time' => ['nullable', 'date', 'after:form.start_time'],
-    'form.location' => ['nullable', 'string', 'max:255'],
     'form.color' => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
 ]);
 
@@ -92,8 +90,6 @@ $messages = [
     'form.title.required' => 'Le titre du devoir est obligatoire.',
     'form.title.max' => 'Le titre ne peut pas dépasser 255 caractères.',
     'form.due_date.required' => 'La date de rendu est obligatoire.',
-    'form.priority.required' => 'La priorité est obligatoire.',
-    'form.priority.in' => 'La priorité doit être low, medium ou high.',
     'form.end_time.after' => 'La date de fin doit être après la date de début.',
     'form.color.regex' => 'La couleur doit être au format hexadécimal (#000000).',
 ];
@@ -122,8 +118,7 @@ $save = function () {
         'subject' => $this->form['subject'],
         'teacher' => $this->form['teacher'],
         'due_date' => $this->form['due_date'],
-        'priority' => $this->form['priority'],
-        'location' => $this->form['location'],
+        'delivery_method' => $this->form['delivery_method'],
         'color' => $this->form['color'],
         'source' => 'manual',
     ];
@@ -245,16 +240,6 @@ $cancel = function () {
                         </flux:field>
                     </div>
 
-                    {{-- Priorité --}}
-                    <flux:field>
-                        <flux:label>Priorité *</flux:label>
-                        <flux:select wire:model="form.priority" required>
-                            <option value="low">Faible</option>
-                            <option value="medium">Moyenne</option>
-                            <option value="high">Élevée</option>
-                        </flux:select>
-                        <flux:error name="form.priority"/>
-                    </flux:field>
 
                     {{-- Date de rendu --}}
                     <flux:field>
@@ -265,6 +250,19 @@ $cancel = function () {
                             required
                         />
                         <flux:error name="form.due_date"/>
+                    </flux:field>
+
+                    {{-- Méthode de rendu --}}
+                    <flux:field>
+                        <flux:label>Comment rendre le devoir</flux:label>
+                        <flux:input
+                            wire:model="form.delivery_method"
+                            placeholder="Ex: En ligne sur Moodle, En main propre, Par email, À rendre en classe"
+                        />
+                        <flux:error name="form.delivery_method"/>
+                        <flux:text class="text-xs text-zinc-500">
+                            Indiquez comment vous devez rendre ce devoir au professeur
+                        </flux:text>
                     </flux:field>
                 </div>
             </div>
@@ -303,15 +301,6 @@ $cancel = function () {
                         </flux:field>
                     </div>
 
-                    {{-- Lieu --}}
-                    <flux:field>
-                        <flux:label>Lieu</flux:label>
-                        <flux:input
-                            wire:model="form.location"
-                            placeholder="Ex: Salle B101, À rendre en ligne"
-                        />
-                        <flux:error name="form.location"/>
-                    </flux:field>
 
                     {{-- Couleur --}}
                     <flux:field>
